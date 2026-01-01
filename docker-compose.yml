@@ -1,0 +1,39 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: metcon_mysql
+    restart: unless-stopped
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_DATABASE: metcon_db
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_USER: metcon_user
+      MYSQL_PASSWORD: metcon_password
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - metcon_network
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: metcon_phpmyadmin
+    restart: unless-stopped
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+      PMA_USER: root
+      PMA_PASSWORD: rootpassword
+    depends_on:
+      - mysql
+    networks:
+      - metcon_network
+
+volumes:
+  mysql_data:
+
+networks:
+  metcon_network:
+    driver: bridge
