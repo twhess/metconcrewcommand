@@ -16,6 +16,11 @@ class Role extends Model
         'is_active' => 'boolean',
     ];
 
+    public function permissions()
+    {
+        return $this->belongsToMany(Permission::class)->withTimestamps();
+    }
+
     public function contacts()
     {
         return $this->belongsToMany(Contact::class, 'contact_roles')

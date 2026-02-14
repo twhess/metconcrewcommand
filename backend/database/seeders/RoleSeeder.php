@@ -10,6 +10,9 @@ class RoleSeeder extends Seeder
     public function run(): void
     {
         $roles = [
+            // System Roles
+            ['name' => 'Admin', 'slug' => 'admin', 'description' => 'System administrator with full access'],
+
             // Contact Roles (for company contacts)
             ['name' => 'Project Manager', 'slug' => 'project_manager', 'description' => 'Primary contact for project coordination'],
             ['name' => 'Job Superintendent', 'slug' => 'job_superintendent', 'description' => 'On-site job superintendent'],
@@ -22,6 +25,11 @@ class RoleSeeder extends Seeder
             ['name' => 'Safety Manager', 'slug' => 'safety_manager', 'description' => 'Oversees safety compliance'],
             ['name' => 'Dispatch/Scheduling', 'slug' => 'dispatch_scheduling', 'description' => 'Handles dispatch and scheduling'],
             ['name' => 'Owner/Principal', 'slug' => 'owner_principal', 'description' => 'Company owner or principal'],
+
+            // Crew Roles
+            ['name' => 'Foreman', 'slug' => 'foreman', 'description' => 'Crew foreman'],
+            ['name' => 'Supervisor', 'slug' => 'supervisor', 'description' => 'Crew supervisor'],
+            ['name' => 'Laborer', 'slug' => 'laborer', 'description' => 'General laborer'],
         ];
 
         foreach ($roles as $role) {

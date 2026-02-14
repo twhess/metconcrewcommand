@@ -24,13 +24,13 @@ class DatabaseSeeder extends Seeder
         $admin = User::factory()->create([
             'name' => 'Admin User',
             'email' => 'admin@example.com',
-            'password' => bcrypt('password123'),
+            'password' => 'password123',
             'is_active' => true,
             'is_available' => true,
         ]);
 
         // Assign admin role to the user
-        $adminRole = \App\Models\Role::where('name', 'admin')->first();
+        $adminRole = \App\Models\Role::where('slug', 'admin')->first();
         $admin->roles()->attach($adminRole);
     }
 }

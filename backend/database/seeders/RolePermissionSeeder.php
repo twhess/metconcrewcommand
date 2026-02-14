@@ -11,17 +11,17 @@ class RolePermissionSeeder extends Seeder
     public function run(): void
     {
         // Admin gets all permissions
-        $admin = Role::where('name', 'admin')->first();
+        $admin = Role::where('slug', 'admin')->first();
         $admin->permissions()->attach(Permission::all());
 
         // Project Manager
-        $pm = Role::where('name', 'project_manager')->first();
+        $pm = Role::where('slug', 'project_manager')->first();
         $pmPermissions = Permission::whereIn('module', ['projects', 'schedules', 'companies', 'contacts', 'equipment', 'reports'])
             ->get();
         $pm->permissions()->attach($pmPermissions);
 
         // Foreman
-        $foreman = Role::where('name', 'foreman')->first();
+        $foreman = Role::where('slug', 'foreman')->first();
         $foremanPermissions = Permission::whereIn('module', ['schedules', 'equipment', 'inventory'])
             ->whereIn('name', [
                 'schedules.view', 'schedules.update',
@@ -32,12 +32,12 @@ class RolePermissionSeeder extends Seeder
         $foreman->permissions()->attach($foremanPermissions);
 
         // Laborer - view only
-        $laborer = Role::where('name', 'laborer')->first();
+        $laborer = Role::where('slug', 'laborer')->first();
         $laborerPermissions = Permission::where('name', 'like', '%.view')->get();
         $laborer->permissions()->attach($laborerPermissions);
 
         // Supervisor
-        $supervisor = Role::where('name', 'supervisor')->first();
+        $supervisor = Role::where('slug', 'supervisor')->first();
         $supervisorPermissions = Permission::whereIn('module', ['schedules', 'equipment', 'inventory', 'reports'])
             ->get();
         $supervisor->permissions()->attach($supervisorPermissions);
