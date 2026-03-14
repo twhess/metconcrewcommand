@@ -141,6 +141,21 @@ export const useScheduleStore = defineStore('schedule', () => {
     }
   }
 
+  async function duplicateSchedule(scheduleId: number) {
+    loading.value = true
+    error.value = null
+    try {
+      const response = await apiClient.post<ApiResponse<Schedule>>(`/schedules/${scheduleId}/duplicate`)
+      schedules.value.push(response.data.data)
+      return response.data
+    } catch (err: any) {
+      error.value = err.response?.data?.message || 'Failed to duplicate schedule'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
   function setSelectedDate(date: string) {
     selectedDate.value = date
   }
@@ -159,6 +174,7 @@ export const useScheduleStore = defineStore('schedule', () => {
     deleteSchedule,
     assignCrew,
     assignEquipment,
+    duplicateSchedule,
     setSelectedDate,
   }
 })

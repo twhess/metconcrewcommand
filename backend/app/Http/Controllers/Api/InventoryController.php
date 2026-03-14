@@ -161,4 +161,114 @@ class InventoryController extends Controller
             'data' => $transaction,
         ]);
     }
+
+    public function lowStock(Request $request): JsonResponse
+    {
+        $items = $this->inventoryService->getLowStockItems();
+
+        return response()->json([
+            'success' => true,
+            'data' => $items,
+            'count' => count($items),
+        ]);
+    }
+
+    public function orderSuggestions(Request $request): JsonResponse
+    {
+        $suggestions = $this->inventoryService->getOrderSuggestions();
+
+        return response()->json([
+            'success' => true,
+            'data' => $suggestions,
+            'count' => count($suggestions),
+        ]);
+    }
+
+    public function byLocation(Request $request, int $locationId): JsonResponse
+    {
+        $inventory = $this->inventoryService->getLocationInventory($locationId);
+
+        return response()->json([
+            'success' => true,
+            'data' => $inventory,
+        ]);
+    }
+
+    public function byProject(Request $request, int $projectId): JsonResponse
+    {
+        $usage = $this->inventoryService->getProjectUsageSummary($projectId);
+
+        return response()->json([
+            'success' => true,
+            'data' => $usage,
+        ]);
+    }
+
+    public function receive(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'inventory_item_id' => 'required|exists:inventory_items,id',
+            'location_id' => 'required|exists:inventory_locations,id',
+            'quantity' => 'required|numeric|min:0.01',
+            'notes' => 'nullable|string',
+        ]);
+
+        $transaction = $this->inventoryService->receiveInventory(
+            $validated['inventory_item_id'],
+            $validated['location_id'],
+            $validated['quantity'],
+            $validated['notes'] ?? null
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Inventory received successfully',
+            'data' => $transaction,
+        ]);
+    }
+
+    public function receiveBatch(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'location_id' => 'required|exists:inventory_locations,id',
+            'items' => 'required|array|min:1',
+            'items.*.inventory_item_id' => 'required|exists:inventory_items,id',
+            'items.*.quantity' => 'required|numeric|min:0.01',
+            'items.*.notes' => 'nullable|string',
+            'notes' => 'nullable|string',
+        ]);
+
+        $transactions = $this->inventoryService->receiveBatch(
+            $validated['location_id'],
+            $validated['items'],
+            $validated['notes'] ?? null
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => count($transactions) . ' items received successfully',
+            'data' => $transactions,
+        ]);
+    }
+
+    public function scanCode(string $code): JsonResponse
+    {
+        $item = InventoryItem::where('qr_code', $code)
+            ->orWhere('barcode', $code)
+            ->orWhere('sku', $code)
+            ->with('stock.location')
+            ->first();
+
+        if (!$item) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Item not found for code: ' . $code
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $item
+        ]);
+    }
 }

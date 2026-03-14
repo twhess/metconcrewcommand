@@ -56,6 +56,20 @@ export const useContactStore = defineStore('contact', () => {
     }
   }
 
+  async function fetchContact(id: number) {
+    loading.value = true
+    error.value = null
+    try {
+      const response = await apiClient.get<ApiResponse<Contact>>(`/contacts/${id}`)
+      return response.data.data
+    } catch (err: any) {
+      error.value = err.response?.data?.message || 'Failed to load contact'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
   async function deleteContact(id: number) {
     loading.value = true
     error.value = null
@@ -75,6 +89,7 @@ export const useContactStore = defineStore('contact', () => {
     loading,
     error,
     fetchContacts,
+    fetchContact,
     createContact,
     updateContact,
     deleteContact,

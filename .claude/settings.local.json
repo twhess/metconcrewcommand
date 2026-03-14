@@ -19,7 +19,10 @@
       "Bash(npx tsc:*)",
       "Bash(npm run build:*)",
       "Bash(xargs kill:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(npx vue-tsc:*)",
+      "Bash(grep:*)",
+      "Bash(/Users/travishess1/DockerProjects/metconCrewCommand/frontend/src/pages/RolesPage.vue:*)"
     ]
   }
 }

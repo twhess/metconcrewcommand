@@ -20,6 +20,8 @@ class UserController extends Controller
 
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', User::class);
+
         $query = User::with('roles');
 
         if ($request->has('is_active')) {
@@ -40,6 +42,8 @@ class UserController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        $this->authorize('create', User::class);
+
         $validated = $request->validate([
             'username' => 'required|string|max:255|unique:users',
             'first_name' => 'required|string|max:255',
@@ -74,6 +78,8 @@ class UserController extends Controller
     {
         $user = User::with(['roles', 'vacations'])->findOrFail($id);
 
+        $this->authorize('view', $user);
+
         return response()->json([
             'success' => true,
             'data' => $user,
@@ -83,6 +89,8 @@ class UserController extends Controller
     public function update(Request $request, int $id): JsonResponse
     {
         $user = User::findOrFail($id);
+
+        $this->authorize('update', $user);
 
         $validated = $request->validate([
             'username' => 'sometimes|required|string|max:255|unique:users,username,' . $id,
@@ -121,6 +129,8 @@ class UserController extends Controller
     {
         $user = User::findOrFail($id);
 
+        $this->authorize('delete', $user);
+
         // Prevent deletion of own account
         if ($user->id === auth()->id()) {
             return response()->json([
@@ -140,6 +150,8 @@ class UserController extends Controller
     public function assignRoles(Request $request, int $id): JsonResponse
     {
         $user = User::findOrFail($id);
+
+        $this->authorize('assignRoles', $user);
 
         $validated = $request->validate([
             'role_ids' => 'required|array',

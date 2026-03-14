@@ -340,32 +340,51 @@ async function loadDashboardData() {
     await scheduleStore.fetchSchedules({ date: today })
     todaySchedules.value = scheduleStore.schedulesForSelectedDate
     metrics.value[0].value = todaySchedules.value.length.toString()
+  } catch (error: any) {
+    console.error('Failed to load schedules:', error)
+    $q.notify({
+      type: 'negative',
+      message: `Failed to load schedules: ${error.response?.data?.message || error.message}`
+    })
+  } finally {
+    loadingSchedules.value = false
+  }
 
+  try {
     // Load projects
     loadingProjects.value = true
     await projectStore.fetchProjects()
     metrics.value[1].value = projectStore.activeProjects.length.toString()
+  } catch (error: any) {
+    console.error('Failed to load projects:', error)
+    $q.notify({
+      type: 'negative',
+      message: `Failed to load projects: ${error.response?.data?.message || error.message}`
+    })
+  } finally {
+    loadingProjects.value = false
+  }
 
+  try {
     // Load users
     await userStore.fetchUsers({ is_active: true })
     const available = await userStore.fetchAvailableUsers(today)
     availableEmployeesCount.value = available.length
     metrics.value[2].value = available.length.toString()
+  } catch (error: any) {
+    console.error('Failed to load users:', error)
+    // Don't show notification for optional data
+  }
 
+  try {
     // Load equipment
     await equipmentStore.fetchEquipment({ status: 'active' })
     const availableEquip = await equipmentStore.fetchAvailableEquipment(today)
     availableEquipmentCount.value = availableEquip.length
     metrics.value[3].value = availableEquip.length.toString()
-
-  } catch (error) {
-    $q.notify({
-      type: 'negative',
-      message: 'Failed to load dashboard data'
-    })
-  } finally {
-    loadingSchedules.value = false
-    loadingProjects.value = false
+  } catch (error: any) {
+    console.error('Failed to load equipment:', error)
+    // Don't show notification for optional data
   }
 }
 

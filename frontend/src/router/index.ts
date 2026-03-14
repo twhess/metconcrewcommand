@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory, type Router, type RouteRecordRaw, type NavigationGuardNext, type RouteLocationNormalized } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { usePermissions } from '@/composables/usePermissions'
 import MainLayout from '@/layouts/MainLayout.vue'
 import LoginPage from '@/pages/LoginPage.vue'
 import DashboardPage from '@/pages/DashboardPage.vue'
@@ -59,6 +60,12 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/pages/InventoryPage.vue'),
         meta: { requiresAuth: true, permission: 'inventory.view' }
       },
+      {
+        path: '/checkout',
+        name: 'MaterialCheckout',
+        component: () => import('@/pages/EmployeeCheckoutPage.vue'),
+        meta: { requiresAuth: true, title: 'Material Checkout' }
+      },
       // Users & Roles
       {
         path: '/users',
@@ -117,6 +124,13 @@ const routes: RouteRecordRaw[] = [
         name: 'Settings',
         component: () => import('@/pages/SettingsPage.vue'),
         meta: { requiresAuth: true }
+      },
+      // Email Test
+      {
+        path: '/email-test',
+        name: 'EmailTest',
+        component: () => import('@/pages/EmailTestPage.vue'),
+        meta: { requiresAuth: true }
       }
     ]
   }
@@ -133,15 +147,32 @@ router.beforeEach((
   next: NavigationGuardNext
 ): void => {
   const authStore = useAuthStore()
+  const { can } = usePermissions()
   const isAuthenticated = authStore.isAuthenticated
 
+  // Check authentication
   if (to.meta.requiresAuth && !isAuthenticated) {
     next('/login')
-  } else if (to.meta.requiresGuest && isAuthenticated) {
-    next('/dashboard')
-  } else {
-    next()
+    return
   }
+
+  if (to.meta.requiresGuest && isAuthenticated) {
+    next('/dashboard')
+    return
+  }
+
+  // Check permissions
+  if (to.meta.permission && isAuthenticated) {
+    const permission = to.meta.permission as string
+    if (!can(permission)) {
+      // User doesn't have required permission
+      console.warn(`Access denied: User lacks permission "${permission}" for route ${to.path}`)
+      next('/dashboard') // Redirect to dashboard
+      return
+    }
+  }
+
+  next()
 })
 
 export default router

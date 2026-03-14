@@ -11,7 +11,7 @@ class ContactController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $query = Contact::with(['company', 'roles', 'contactRoles.location', 'createdBy', 'updatedBy']);
+        $query = Contact::with(['company', 'roles', 'contactRoles.location', 'contactRoles.role', 'createdBy', 'updatedBy']);
 
         if ($request->has('company_id')) {
             $query->where('company_id', $request->input('company_id'));

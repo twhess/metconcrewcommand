@@ -172,7 +172,7 @@ class ScheduleController extends Controller
             'materials.*.type' => 'required|in:concrete,gravel,other',
             'materials.*.quantity' => 'nullable|numeric|min:0',
             'materials.*.unit' => 'nullable|string',
-            'materials.*.rate_per_hour' => 'nullable|numeric|min:0',
+            'materials.*.yards_per_hour' => 'nullable|numeric|min:0',
             'materials.*.additives' => 'nullable|string',
             'materials.*.dispatch_number' => 'nullable|string',
             'materials.*.special_instructions' => 'nullable|string',
@@ -188,6 +188,142 @@ class ScheduleController extends Controller
             'success' => true,
             'message' => 'Materials added successfully',
             'data' => $schedule->load('materials'),
+        ]);
+    }
+
+    public function duplicate(int $id): JsonResponse
+    {
+        $originalSchedule = Schedule::with([
+            'crewAssignments',
+            'equipmentAssignments',
+            'materials',
+        ])->findOrFail($id);
+
+        // Calculate next day
+        $nextDate = date('Y-m-d', strtotime($originalSchedule->date . ' +1 day'));
+
+        // Create new schedule with same details
+        $newSchedule = Schedule::create([
+            'project_id' => $originalSchedule->project_id,
+            'date' => $nextDate,
+            'start_time' => $originalSchedule->start_time,
+            'end_time' => $originalSchedule->end_time,
+            'status' => 'scheduled',
+            'dispatch_instructions' => $originalSchedule->dispatch_instructions,
+            'notes' => $originalSchedule->notes,
+            'created_by' => auth()->id(),
+        ]);
+
+        $assignedCrew = [];
+        $assignedEquipment = [];
+        $crewErrors = [];
+        $equipmentErrors = [];
+
+        // Copy crew assignments with availability validation
+        $userIds = $originalSchedule->crewAssignments->pluck('user_id')->toArray();
+        $foremanId = $originalSchedule->crewAssignments->where('is_foreman', true)->first()?->user_id;
+
+        if (!empty($userIds)) {
+            $crewResult = $this->schedulingService->assignCrewToSchedule(
+                $newSchedule->id,
+                $userIds,
+                $foremanId
+            );
+            $assignedCrew = $crewResult['assigned'];
+            $crewErrors = $crewResult['errors'];
+        }
+
+        // Copy equipment assignments with availability validation
+        $equipmentIds = $originalSchedule->equipmentAssignments->pluck('equipment_id')->toArray();
+
+        if (!empty($equipmentIds)) {
+            $equipmentResult = $this->schedulingService->assignEquipmentToSchedule(
+                $newSchedule->id,
+                $equipmentIds
+            );
+            $assignedEquipment = $equipmentResult['assigned'];
+            $equipmentErrors = $equipmentResult['errors'];
+        }
+
+        // Copy materials (no validation needed)
+        foreach ($originalSchedule->materials as $material) {
+            $newSchedule->materials()->create([
+                'type' => $material->type,
+                'quantity' => $material->quantity,
+                'unit' => $material->unit,
+                'yards_per_hour' => $material->yards_per_hour,
+                'additives' => $material->additives,
+                'dispatch_number' => $material->dispatch_number,
+                'special_instructions' => $material->special_instructions,
+                'created_by' => auth()->id(),
+            ]);
+        }
+
+        $newSchedule->load(['project', 'crewAssignments.user', 'equipmentAssignments.equipment', 'materials']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Schedule duplicated successfully',
+            'data' => $newSchedule,
+            'crew_assigned' => $assignedCrew,
+            'crew_errors' => $crewErrors,
+            'equipment_assigned' => $assignedEquipment,
+            'equipment_errors' => $equipmentErrors,
+        ], 201);
+    }
+
+    public function deleteMaterial(int $scheduleId, int $materialId): JsonResponse
+    {
+        $schedule = Schedule::findOrFail($scheduleId);
+        $material = $schedule->materials()->findOrFail($materialId);
+
+        $material->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Material deleted successfully',
+        ]);
+    }
+
+    public function removeCrewMember(int $scheduleId, int $userId): JsonResponse
+    {
+        $schedule = Schedule::findOrFail($scheduleId);
+        $assignment = $schedule->crewAssignments()->where('user_id', $userId)->first();
+
+        if (!$assignment) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Crew member not found on this schedule',
+            ], 404);
+        }
+
+        $assignment->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Crew member removed successfully',
+            'data' => $schedule->load(['crewAssignments.user']),
+        ]);
+    }
+
+    public function removeEquipment(int $scheduleId, int $equipmentId): JsonResponse
+    {
+        $schedule = Schedule::findOrFail($scheduleId);
+        $assignment = $schedule->equipmentAssignments()->where('equipment_id', $equipmentId)->first();
+
+        if (!$assignment) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Equipment not found on this schedule',
+            ], 404);
+        }
+
+        $assignment->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Equipment removed successfully',
+            'data' => $schedule->load(['equipmentAssignments.equipment']),
         ]);
     }
 }

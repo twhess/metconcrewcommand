@@ -28,12 +28,16 @@ class AuthController extends Controller
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
+        // Load user's roles with their permissions
+        $user->load('roles.permissions');
+
         return response()->json([
             'token' => $token,
             'user' => [
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
+                'roles' => $user->roles,
             ]
         ], 200);
     }
@@ -49,11 +53,15 @@ class AuthController extends Controller
 
     public function me(Request $request)
     {
+        // Load user's roles with their permissions
+        $request->user()->load('roles.permissions');
+
         return response()->json([
             'user' => [
                 'id' => $request->user()->id,
                 'name' => $request->user()->name,
                 'email' => $request->user()->email,
+                'roles' => $request->user()->roles,
             ]
         ], 200);
     }

@@ -271,6 +271,21 @@
         </q-item-section>
       </q-item>
 
+      <!-- Email Test -->
+      <q-item
+        clickable
+        :to="{ name: 'EmailTest' }"
+        active-class="sidebar-item-active"
+        class="sidebar-item"
+      >
+        <q-item-section avatar>
+          <q-icon name="mail" />
+        </q-item-section>
+        <q-item-section v-if="drawerExpanded">
+          <q-item-label>Email Test</q-item-label>
+        </q-item-section>
+      </q-item>
+
       <!-- Settings -->
       <q-item
         clickable

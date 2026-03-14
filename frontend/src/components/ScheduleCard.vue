@@ -10,6 +10,14 @@
           {{ schedule.status }}
         </span>
         <button
+          v-if="can('schedules.create')"
+          @click="$emit('duplicate', schedule)"
+          class="btn-icon"
+          title="Duplicate to Next Day"
+        >
+          📋
+        </button>
+        <button
           v-if="can('schedules.update')"
           @click="$emit('edit', schedule)"
           class="btn-icon"
@@ -30,9 +38,21 @@
 
     <div class="card-body">
       <!-- Crew Section -->
-      <div v-if="schedule.crew_assignments && schedule.crew_assignments.length > 0" class="section">
-        <div class="section-title">Crew ({{ schedule.crew_assignments.length }})</div>
-        <div class="crew-list">
+      <div class="section">
+        <div class="section-header">
+          <div class="section-title">
+            Crew {{ schedule.crew_assignments && schedule.crew_assignments.length > 0 ? `(${schedule.crew_assignments.length})` : '' }}
+          </div>
+          <button
+            v-if="can('schedules.update')"
+            @click="$emit('assignCrew', schedule)"
+            class="btn-action"
+            title="Assign Crew"
+          >
+            👥 Assign
+          </button>
+        </div>
+        <div v-if="schedule.crew_assignments && schedule.crew_assignments.length > 0" class="crew-list">
           <div
             v-for="assignment in schedule.crew_assignments"
             :key="assignment.id"
@@ -42,12 +62,25 @@
             <span v-if="assignment.is_foreman" class="badge">Foreman</span>
           </div>
         </div>
+        <div v-else class="empty-state">No crew assigned</div>
       </div>
 
       <!-- Equipment Section -->
-      <div v-if="schedule.equipment_assignments && schedule.equipment_assignments.length > 0" class="section">
-        <div class="section-title">Equipment ({{ schedule.equipment_assignments.length }})</div>
-        <div class="equipment-list">
+      <div class="section">
+        <div class="section-header">
+          <div class="section-title">
+            Equipment {{ schedule.equipment_assignments && schedule.equipment_assignments.length > 0 ? `(${schedule.equipment_assignments.length})` : '' }}
+          </div>
+          <button
+            v-if="can('schedules.update')"
+            @click="$emit('assignEquipment', schedule)"
+            class="btn-action"
+            title="Assign Equipment"
+          >
+            🚜 Assign
+          </button>
+        </div>
+        <div v-if="schedule.equipment_assignments && schedule.equipment_assignments.length > 0" class="equipment-list">
           <div
             v-for="assignment in schedule.equipment_assignments"
             :key="assignment.id"
@@ -56,20 +89,44 @@
             {{ assignment.equipment?.name || 'Unknown' }}
           </div>
         </div>
+        <div v-else class="empty-state">No equipment assigned</div>
       </div>
 
       <!-- Materials Section -->
-      <div v-if="schedule.materials && schedule.materials.length > 0" class="section">
-        <div class="section-title">Materials ({{ schedule.materials.length }})</div>
-        <div class="materials-list">
+      <div class="section">
+        <div class="section-header">
+          <div class="section-title">
+            Materials {{ schedule.materials && schedule.materials.length > 0 ? `(${schedule.materials.length})` : '' }}
+          </div>
+          <button
+            v-if="can('schedules.update')"
+            @click="$emit('manageMaterials', schedule)"
+            class="btn-action"
+            title="Manage Materials"
+          >
+            🚚 Manage
+          </button>
+        </div>
+        <div v-if="schedule.materials && schedule.materials.length > 0" class="materials-list">
           <div
             v-for="material in schedule.materials"
             :key="material.id"
             class="material-item"
           >
-            {{ material.type }} {{ material.quantity ? `(${material.quantity} ${material.unit})` : '' }}
+            <div>
+              <strong>{{ capitalize(material.type) }}</strong>
+              {{ material.quantity ? `- ${material.quantity} ${material.unit}` : '' }}
+              {{ material.yards_per_hour ? `@ ${material.yards_per_hour} CY/hr` : '' }}
+            </div>
+            <div v-if="material.dispatch_number" class="material-dispatch">
+              Dispatch: {{ material.dispatch_number }}
+              <a v-if="material.dispatch_phone" :href="`tel:${material.dispatch_phone}`" class="phone-link">
+                {{ material.dispatch_phone }}
+              </a>
+            </div>
           </div>
         </div>
+        <div v-else class="empty-state">No materials scheduled</div>
       </div>
 
       <!-- Notes -->
@@ -93,10 +150,18 @@ defineProps<{
 defineEmits<{
   edit: [schedule: Schedule]
   delete: [scheduleId: number]
+  duplicate: [schedule: Schedule]
+  assignCrew: [schedule: Schedule]
+  assignEquipment: [schedule: Schedule]
+  manageMaterials: [schedule: Schedule]
 }>()
 
 const { can } = usePermissions()
 const { formatTime } = useDateFormatting()
+
+function capitalize(str: string): string {
+  return str.charAt(0).toUpperCase() + str.slice(1)
+}
 </script>
 
 <style scoped>
@@ -189,12 +254,41 @@ const { formatTime } = useDateFormatting()
   margin-bottom: 0;
 }
 
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
 .section-title {
   font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
   color: #6b7280;
-  margin-bottom: 0.5rem;
+}
+
+.btn-action {
+  background: #e5e7eb;
+  border: none;
+  border-radius: 0.375rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #374151;
+}
+
+.btn-action:hover {
+  background: #d1d5db;
+}
+
+.empty-state {
+  font-size: 0.875rem;
+  color: #9ca3af;
+  font-style: italic;
+  padding: 0.5rem 0;
 }
 
 .crew-list,
@@ -230,5 +324,21 @@ const { formatTime } = useDateFormatting()
   font-size: 0.875rem;
   color: #6b7280;
   line-height: 1.5;
+}
+
+.material-dispatch {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-top: 0.125rem;
+}
+
+.phone-link {
+  color: #2563eb;
+  text-decoration: none;
+  margin-left: 0.5rem;
+}
+
+.phone-link:hover {
+  text-decoration: underline;
 }
 </style>

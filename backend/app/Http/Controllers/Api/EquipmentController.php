@@ -19,6 +19,8 @@ class EquipmentController extends Controller
 
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', Equipment::class);
+
         $query = Equipment::query();
 
         if ($request->has('status')) {
@@ -39,14 +41,19 @@ class EquipmentController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        $this->authorize('create', Equipment::class);
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'equipment_number' => 'nullable|string|max:255|unique:equipment',
+            'qr_code' => 'required|string|max:255|unique:equipment',
             'type' => 'required|in:trackable,non_trackable',
             'category' => 'nullable|string|max:255',
-            'status' => 'nullable|in:active,inactive,maintenance',
+            'status' => 'nullable|in:active,inactive,maintenance,in_transit',
             'current_location_type' => 'nullable|string|max:255',
             'current_location_id' => 'nullable|integer',
+            'has_hour_meter' => 'nullable|boolean',
+            'current_hours' => 'nullable|numeric|min:0',
             'description' => 'nullable|string',
             'notes' => 'nullable|string',
         ]);
@@ -66,6 +73,8 @@ class EquipmentController extends Controller
     {
         $equipment = Equipment::with(['movements'])->findOrFail($id);
 
+        $this->authorize('view', $equipment);
+
         return response()->json([
             'success' => true,
             'data' => $equipment,
@@ -76,12 +85,15 @@ class EquipmentController extends Controller
     {
         $equipment = Equipment::findOrFail($id);
 
+        $this->authorize('update', $equipment);
+
         $validated = $request->validate([
             'name' => 'sometimes|required|string|max:255',
             'equipment_number' => 'nullable|string|max:255|unique:equipment,equipment_number,' . $id,
             'type' => 'sometimes|required|in:trackable,non_trackable',
             'category' => 'nullable|string|max:255',
-            'status' => 'nullable|in:active,inactive,maintenance',
+            'status' => 'nullable|in:active,inactive,maintenance,in_transit',
+            'has_hour_meter' => 'nullable|boolean',
             'description' => 'nullable|string',
             'notes' => 'nullable|string',
         ]);
@@ -100,6 +112,9 @@ class EquipmentController extends Controller
     public function destroy(int $id): JsonResponse
     {
         $equipment = Equipment::findOrFail($id);
+
+        $this->authorize('delete', $equipment);
+
         $equipment->delete();
 
         return response()->json([
@@ -110,9 +125,17 @@ class EquipmentController extends Controller
 
     public function move(Request $request, int $id): JsonResponse
     {
+        $equipment = Equipment::findOrFail($id);
+
+        $this->authorize('move', $equipment);
+
         $validated = $request->validate([
-            'location_type' => 'required|in:project,location,available',
+            'location_type' => 'required|in:project,yard,shop,location,in_transit',
             'location_id' => 'nullable|integer',
+            'movement_type' => 'required|in:pickup,dropoff,transfer,return_to_yard',
+            'hours_reading' => 'nullable|numeric|min:0',
+            'gps_latitude' => 'nullable|numeric|between:-90,90',
+            'gps_longitude' => 'nullable|numeric|between:-180,180',
             'notes' => 'nullable|string',
         ]);
 
@@ -120,6 +143,12 @@ class EquipmentController extends Controller
             $id,
             $validated['location_type'],
             $validated['location_id'] ?? null,
+            $validated['movement_type'],
+            $validated['hours_reading'] ?? null,
+            $validated['gps_latitude'] ?? null,
+            $validated['gps_longitude'] ?? null,
+            false,
+            null,
             $validated['notes'] ?? null
         );
 
@@ -149,6 +178,40 @@ class EquipmentController extends Controller
             'success' => true,
             'date' => $date,
             'data' => $availableEquipment,
+        ]);
+    }
+
+    /**
+     * Update equipment hour meter reading
+     */
+    public function updateHours(Request $request, int $id): JsonResponse
+    {
+        $validated = $request->validate([
+            'hours_reading' => 'required|numeric|min:0',
+        ]);
+
+        $equipment = $this->equipmentService->updateHours($id, $validated['hours_reading']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Hour meter updated successfully',
+            'data' => $equipment,
+        ]);
+    }
+
+    /**
+     * Generate QR code for equipment
+     */
+    public function generateQrCode(int $id): JsonResponse
+    {
+        $qrCode = $this->equipmentService->generateQrCode($id);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'QR code generated successfully',
+            'data' => [
+                'qr_code' => $qrCode,
+            ],
         ]);
     }
 }

@@ -22,6 +22,9 @@ class DatabaseSeeder extends Seeder
 
         // Create admin user
         $admin = User::factory()->create([
+            'username' => 'admin',
+            'first_name' => 'Admin',
+            'last_name' => 'User',
             'name' => 'Admin User',
             'email' => 'admin@example.com',
             'password' => 'password123',
@@ -32,5 +35,16 @@ class DatabaseSeeder extends Seeder
         // Assign admin role to the user
         $adminRole = \App\Models\Role::where('slug', 'admin')->first();
         $admin->roles()->attach($adminRole);
+
+        // Seed companies with locations and contacts
+        $this->call(CompanySeeder::class);
+
+        // Seed yards, vehicles, equipment, and maintenance
+        $this->call([
+            YardSeeder::class,
+            EquipmentSeeder::class,
+            VehicleSeeder::class,
+            MaintenanceSeeder::class,
+        ]);
     }
 }

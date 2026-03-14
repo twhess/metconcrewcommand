@@ -109,4 +109,15 @@ class RoleController extends Controller
             'data' => $role->load('permissions'),
         ]);
     }
+
+    public function getAllPermissions(): JsonResponse
+    {
+        // Get all permissions grouped by module
+        $permissions = Permission::all()->groupBy('module');
+
+        return response()->json([
+            'success' => true,
+            'data' => $permissions,
+        ]);
+    }
 }

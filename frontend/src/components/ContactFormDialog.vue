@@ -9,6 +9,22 @@
 
       <q-card-section>
         <q-form @submit="onSubmit" class="q-gutter-md">
+          <!-- Company selector (shown when no companyId provided) -->
+          <q-select
+            v-if="!props.companyId"
+            v-model="selectedCompanyId"
+            :options="companyOptions"
+            option-value="id"
+            option-label="name"
+            emit-value
+            map-options
+            label="Company *"
+            outlined
+            dense
+            :rules="[(val: number | null) => !!val || 'Company is required']"
+            @update:model-value="onCompanyChange"
+          />
+
           <div class="row q-col-gutter-sm">
             <div class="col-6">
               <q-input
@@ -120,12 +136,12 @@
                       label="Role *"
                       outlined
                       dense
-                      :rules="[val => !!val || 'Role is required']"
+                      :rules="[(val: number | null) => !!val || 'Role is required']"
                     />
                   </div>
                   <div class="col-6">
                     <q-select
-                      v-model="assignment.company_location_id"
+                      v-model="assignment.location_id"
                       :options="locationOptions"
                       option-value="id"
                       option-label="location_name"
@@ -187,31 +203,31 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { useQuasar } from 'quasar'
 import { useContactStore } from '@/stores/contact'
 import { useRoleStore } from '@/stores/role'
-import type { Contact, CompanyLocation } from '@/types'
+import apiClient from '@/api/client'
+import type { Contact, Company, CompanyLocation, ApiResponse } from '@/types'
 
 interface Props {
   modelValue: boolean
-  companyId: number
+  companyId?: number
   contact?: Contact | null
   locations?: CompanyLocation[]
 }
 
-interface Emits {
-  (e: 'update:modelValue', value: boolean): void
-  (e: 'saved'): void
-}
-
 interface RoleAssignment {
   role_id: number | null
-  company_location_id: number | null
+  location_id: number | null
 }
 
 const props = withDefaults(defineProps<Props>(), {
+  companyId: 0,
   contact: null,
   locations: () => []
 })
 
-const emit = defineEmits<Emits>()
+const emit = defineEmits<{
+  (e: 'update:modelValue', value: boolean): void
+  (e: 'saved'): void
+}>()
 
 const $q = useQuasar()
 const contactStore = useContactStore()
@@ -227,9 +243,12 @@ const dialogTitle = computed(() =>
 )
 
 const loading = ref(false)
+const companies = ref<Company[]>([])
+const selectedCompanyId = ref<number | null>(null)
+const companyLocations = ref<CompanyLocation[]>([])
 
 const formData = ref({
-  company_id: props.companyId,
+  company_id: props.companyId || null as number | null,
   first_name: '',
   last_name: '',
   title: '',
@@ -237,7 +256,7 @@ const formData = ref({
   phone_mobile: '',
   phone_work: '',
   phone_other: '',
-  preferred_contact_method: null as string | null,
+  preferred_contact_method: undefined as 'email' | 'mobile' | 'work' | 'other' | undefined,
   notes: ''
 })
 
@@ -245,25 +264,58 @@ const roleAssignments = ref<RoleAssignment[]>([])
 
 const contactMethods = [
   { label: 'Email', value: 'email' },
-  { label: 'Mobile Phone', value: 'phone_mobile' },
-  { label: 'Work Phone', value: 'phone_work' },
-  { label: 'Other Phone', value: 'phone_other' }
+  { label: 'Mobile Phone', value: 'mobile' },
+  { label: 'Work Phone', value: 'work' },
+  { label: 'Other Phone', value: 'other' }
 ]
 
+const companyOptions = computed(() => companies.value)
 const availableRoles = computed(() => roleStore.roles)
 
-const locationOptions = computed(() => props.locations || [])
+const locationOptions = computed(() => {
+  if (props.locations && props.locations.length > 0) {
+    return props.locations
+  }
+  return companyLocations.value
+})
 
 onMounted(async () => {
   if (roleStore.roles.length === 0) {
     await roleStore.fetchRoles()
   }
+  if (!props.companyId) {
+    try {
+      const response = await apiClient.get<ApiResponse<Company[]>>('/companies')
+      companies.value = response.data.data
+    } catch {
+      // Company list load failure is non-critical
+    }
+  }
 })
+
+async function onCompanyChange(companyId: number) {
+  formData.value.company_id = companyId
+  if (companyId) {
+    try {
+      const response = await apiClient.get<ApiResponse<CompanyLocation[]>>('/company-locations', {
+        params: { company_id: companyId }
+      })
+      companyLocations.value = response.data.data
+    } catch {
+      companyLocations.value = []
+    }
+  } else {
+    companyLocations.value = []
+  }
+  roleAssignments.value.forEach(ra => {
+    ra.location_id = null
+  })
+}
 
 watch(() => props.contact, (newContact) => {
   if (newContact) {
     formData.value = {
-      company_id: props.companyId,
+      company_id: newContact.company_id || props.companyId || null,
       first_name: newContact.first_name || '',
       last_name: newContact.last_name || '',
       title: newContact.title || '',
@@ -271,15 +323,20 @@ watch(() => props.contact, (newContact) => {
       phone_mobile: newContact.phone_mobile || '',
       phone_work: newContact.phone_work || '',
       phone_other: newContact.phone_other || '',
-      preferred_contact_method: newContact.preferred_contact_method || null,
+      preferred_contact_method: newContact.preferred_contact_method || undefined,
       notes: newContact.notes || ''
     }
 
-    // Load existing role assignments
+    selectedCompanyId.value = newContact.company_id || null
+
+    if (newContact.company_id && !props.companyId) {
+      onCompanyChange(newContact.company_id)
+    }
+
     if (newContact.contact_roles && newContact.contact_roles.length > 0) {
       roleAssignments.value = newContact.contact_roles.map(cr => ({
         role_id: cr.role_id,
-        company_location_id: cr.company_location_id || null
+        location_id: cr.location_id || null
       }))
     } else {
       roleAssignments.value = []
@@ -289,9 +346,16 @@ watch(() => props.contact, (newContact) => {
   }
 }, { immediate: true })
 
+watch(() => props.companyId, (newId) => {
+  if (newId) {
+    formData.value.company_id = newId
+    selectedCompanyId.value = newId
+  }
+})
+
 function resetForm() {
   formData.value = {
-    company_id: props.companyId,
+    company_id: props.companyId || null,
     first_name: '',
     last_name: '',
     title: '',
@@ -299,16 +363,18 @@ function resetForm() {
     phone_mobile: '',
     phone_work: '',
     phone_other: '',
-    preferred_contact_method: null,
+    preferred_contact_method: undefined,
     notes: ''
   }
+  selectedCompanyId.value = props.companyId || null
   roleAssignments.value = []
+  companyLocations.value = []
 }
 
 function addRole() {
   roleAssignments.value.push({
     role_id: null,
-    company_location_id: null
+    location_id: null
   })
 }
 
@@ -317,7 +383,15 @@ function removeRole(index: number) {
 }
 
 async function onSubmit() {
-  // Validate that all role assignments have a role selected
+  const effectiveCompanyId = props.companyId || selectedCompanyId.value
+  if (!effectiveCompanyId) {
+    $q.notify({
+      type: 'warning',
+      message: 'Please select a company'
+    })
+    return
+  }
+
   const invalidRoles = roleAssignments.value.filter(ra => !ra.role_id)
   if (invalidRoles.length > 0) {
     $q.notify({
@@ -329,19 +403,20 @@ async function onSubmit() {
 
   loading.value = true
   try {
-    const payload = {
+    const payload: Record<string, unknown> = {
       ...formData.value,
+      company_id: effectiveCompanyId,
       roles: roleAssignments.value.filter(ra => ra.role_id !== null)
     }
 
     if (props.contact?.id) {
-      await contactStore.updateContact(props.contact.id, payload)
+      await contactStore.updateContact(props.contact.id, payload as Partial<Contact>)
       $q.notify({
         type: 'positive',
         message: 'Contact updated successfully'
       })
     } else {
-      await contactStore.createContact(payload)
+      await contactStore.createContact(payload as Partial<Contact>)
       $q.notify({
         type: 'positive',
         message: 'Contact added successfully'

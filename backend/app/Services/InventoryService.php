@@ -262,4 +262,111 @@ class InventoryService
 
         return $query->get()->toArray();
     }
+
+    /**
+     * Get order suggestions based on min/max thresholds
+     */
+    public function getOrderSuggestions(): array
+    {
+        $items = InventoryItem::with(['stock'])
+            ->where('is_active', true)
+            ->whereNotNull('min_quantity')
+            ->whereNotNull('max_quantity')
+            ->get();
+
+        return $items->filter(function ($item) {
+            $totalStock = $item->stock->sum('quantity');
+            return $totalStock < $item->min_quantity;
+        })->map(function ($item) {
+            $currentStock = $item->stock->sum('quantity');
+            $suggestedOrderQty = $item->max_quantity - $currentStock;
+
+            return [
+                'item' => $item,
+                'current_stock' => $currentStock,
+                'min_quantity' => $item->min_quantity,
+                'max_quantity' => $item->max_quantity,
+                'suggested_order_qty' => max(0, $suggestedOrderQty),
+            ];
+        })->values()->toArray();
+    }
+
+    /**
+     * Get project usage summary
+     */
+    public function getProjectUsageSummary(int $projectId): array
+    {
+        $transactions = InventoryTransaction::where('project_id', $projectId)
+            ->where('type', 'usage')
+            ->with(['item', 'fromLocation', 'creator'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Group by item and sum quantities
+        $groupedByItem = $transactions->groupBy('inventory_item_id')->map(function ($itemTransactions) {
+            $item = $itemTransactions->first()->item;
+            $totalUsed = $itemTransactions->sum('quantity');
+
+            return [
+                'item' => $item,
+                'total_used' => $totalUsed,
+                'transactions' => $itemTransactions->toArray(),
+            ];
+        })->values();
+
+        return [
+            'usage_summary' => $groupedByItem->toArray(),
+            'total_transactions' => $transactions->count(),
+        ];
+    }
+
+    /**
+     * Get inventory at a specific location
+     */
+    public function getLocationInventory(int $locationId): array
+    {
+        $stocks = InventoryStock::where('inventory_location_id', $locationId)
+            ->with(['item', 'location'])
+            ->get();
+
+        return [
+            'location' => $stocks->first()?->location,
+            'stocks' => $stocks->map(function ($stock) {
+                return [
+                    'item' => $stock->item,
+                    'quantity' => $stock->quantity,
+                    'updated_at' => $stock->updated_at,
+                ];
+            })->toArray(),
+            'total_items' => $stocks->count(),
+        ];
+    }
+
+    /**
+     * Batch receive inventory (multiple items at once)
+     */
+    public function receiveBatch(int $locationId, array $items, ?string $notes = null): array
+    {
+        DB::beginTransaction();
+        try {
+            $transactions = [];
+
+            foreach ($items as $itemData) {
+                $transaction = $this->receiveInventory(
+                    $itemData['inventory_item_id'],
+                    $locationId,
+                    $itemData['quantity'],
+                    $itemData['notes'] ?? $notes
+                );
+                $transactions[] = $transaction;
+            }
+
+            DB::commit();
+
+            return $transactions;
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw $e;
+        }
+    }
 }
