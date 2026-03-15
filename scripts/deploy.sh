@@ -72,7 +72,16 @@ NEW_VERSION=$(bump_beta "$CURRENT_VERSION")
 echo -e "Version: ${CYAN}v${CURRENT_VERSION}${NC} → ${GREEN}v${NEW_VERSION}${NC}"
 echo ""
 
-# 3. Prompt for commit message and commit any changes
+# 3. Make sure dev is up to date with remote (before committing anything)
+echo -e "${YELLOW}Fetching latest from origin...${NC}"
+git fetch origin
+REMOTE_DEV=$(git rev-parse origin/dev 2>/dev/null || echo "")
+if [ -n "$REMOTE_DEV" ] && ! git merge-base --is-ancestor "$REMOTE_DEV" dev 2>/dev/null; then
+    echo -e "${RED}Error: origin/dev has commits not in local dev. Pull first.${NC}"
+    exit 1
+fi
+
+# 4. Prompt for commit message and commit any changes
 if [ -n "$(git status --porcelain)" ]; then
     echo -e "${YELLOW}Uncommitted changes found:${NC}"
     git status --short
@@ -87,21 +96,11 @@ if [ -n "$(git status --porcelain)" ]; then
     echo -e "${GREEN}✓ Changes committed${NC}"
 fi
 
-# 4. Write version file and commit
+# 5. Write version file and commit
 echo "$NEW_VERSION" > "$VERSION_FILE"
 git add "$VERSION_FILE"
 git commit -m "Release v${NEW_VERSION}"
 echo -e "${GREEN}✓ Version bumped to v${NEW_VERSION}${NC}"
-
-# 5. Make sure dev is up to date with remote
-echo -e "${YELLOW}Fetching latest from origin...${NC}"
-git fetch origin
-LOCAL_DEV=$(git rev-parse dev)
-REMOTE_DEV=$(git rev-parse origin/dev 2>/dev/null || echo "")
-if [ -n "$REMOTE_DEV" ] && [ "$LOCAL_DEV" != "$REMOTE_DEV" ]; then
-    echo -e "${RED}Error: Local dev is out of sync with origin/dev. Pull first.${NC}"
-    exit 1
-fi
 
 # 6. Push dev
 echo -e "${YELLOW}Pushing dev to GitHub...${NC}"
