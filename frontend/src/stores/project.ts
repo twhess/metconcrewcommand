@@ -13,7 +13,7 @@ export const useProjectStore = defineStore('project', () => {
   )
 
   const inactiveProjects = computed(() =>
-    projects.value.filter(p => p.status === 'inactive')
+    projects.value.filter(p => p.status === 'cancelled')
   )
 
   const completedProjects = computed(() =>

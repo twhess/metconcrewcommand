@@ -213,7 +213,7 @@ class EmployeeSeeder extends Seeder
 
             $user = User::create(array_merge($empData, [
                 'name' => $empData['first_name'] . ' ' . $empData['last_name'],
-                'password' => env('SEED_DEFAULT_PASSWORD', 'password123'),
+                'password' => env('SEED_DEFAULT_PASSWORD') ?? throw new \RuntimeException('SEED_DEFAULT_PASSWORD env var must be set'),
                 'is_active' => true,
                 'is_available' => true,
                 'created_by' => $adminId,

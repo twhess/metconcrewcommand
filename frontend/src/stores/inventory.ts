@@ -4,7 +4,6 @@ import apiClient from '@/api/client'
 import type {
   InventoryItem,
   InventoryLocation,
-  InventoryStock,
   InventoryTransaction,
   LowStockAlert,
   OrderSuggestion,

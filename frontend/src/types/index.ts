@@ -40,6 +40,7 @@ export interface Role {
   slug: string
   description?: string
   is_active: boolean
+  permissions?: Permission[]
   created_by?: number
   updated_by?: number
 }
