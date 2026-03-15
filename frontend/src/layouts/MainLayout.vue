@@ -25,6 +25,18 @@
 
     <Sidebar v-if="authStore.isAuthenticated" ref="sidebarRef" />
 
+    <!-- Offline indicator -->
+    <q-banner
+      v-if="!isOnline"
+      class="bg-warning text-white text-center"
+      dense
+    >
+      <template v-slot:avatar>
+        <q-icon name="cloud_off" color="white" />
+      </template>
+      You are offline — changes will sync when reconnected
+    </q-banner>
+
     <q-page-container>
       <router-view />
     </q-page-container>
@@ -38,10 +50,12 @@ import { useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import apiClient from '@/api/client'
 import Sidebar from '@/components/Sidebar.vue'
+import { usePWA } from '@/composables/usePWA'
 
 const authStore = useAuthStore()
 const router = useRouter()
 const $q = useQuasar()
+const { isOnline } = usePWA()
 const sidebarRef = ref<InstanceType<typeof Sidebar> | null>(null)
 
 const handleLogout = async (): Promise<void> => {

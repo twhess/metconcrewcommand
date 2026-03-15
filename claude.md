@@ -35,7 +35,7 @@ Claude should treat this file as **system‑level instructions** and follow it f
 
 - **Development Environment**:
   - Backend: `php artisan serve` on port 8002
-  - Frontend: `npm run dev` on port 9000
+  - Frontend: `npm run dev` on port 9002
   - TypeScript type checking integrated into build process
 
 ### Planned/Future Features 🚧
@@ -105,7 +105,7 @@ Before writing code, Claude should:
 * Router: **Vue Router 4.6**
 * Build Tool: **Vite 7.3**
 * Target: **Mobile-first**, responsive desktop support
-* Local Port: **9000**
+* Local Port: **9002**
 
 ### Database
 
@@ -136,7 +136,7 @@ Before writing code, Claude should:
   * MySQL container: `metcon_mysql` on port 3307
   * phpMyAdmin container: `metcon_phpmyadmin` on port 8081
   * Backend runs directly: `php artisan serve --port=8002`
-  * Frontend runs directly: `npm run dev` (port 9000)
+  * Frontend runs directly: `npm run dev` (port 9002)
 * **Production** (planned): AWS environment
   * Environment-driven configuration (ENV vars, secrets)
   * Scalable infrastructure (load balancers, managed DB, object storage)
@@ -353,11 +353,11 @@ frontend/
    ```bash
    cd frontend
    npm install
-   npm run dev  # Runs on port 9000
+   npm run dev  # Runs on port 9002
    ```
 
 4. **Access**:
-   - Frontend: http://localhost:9000
+   - Frontend: http://localhost:9002
    - Backend: http://localhost:8002
    - phpMyAdmin: http://localhost:8081
    - Login: `admin@example.com` / `password123`

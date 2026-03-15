@@ -22,6 +22,8 @@ class VehicleController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', Vehicle::class);
+
         $query = Vehicle::query();
 
         if ($request->has('status')) {
@@ -34,6 +36,22 @@ class VehicleController extends Controller
 
         if ($request->has('assigned_to_user_id')) {
             $query->where('assigned_to_user_id', $request->input('assigned_to_user_id'));
+        }
+
+        if ($request->has('fuel_type')) {
+            $query->where('fuel_type', $request->input('fuel_type'));
+        }
+
+        if ($request->has('search')) {
+            $search = $request->input('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('vehicle_number', 'like', "%{$search}%")
+                  ->orWhere('vin', 'like', "%{$search}%")
+                  ->orWhere('license_plate', 'like', "%{$search}%")
+                  ->orWhere('make', 'like', "%{$search}%")
+                  ->orWhere('model', 'like', "%{$search}%");
+            });
         }
 
         $vehicles = $query->with(['assignedTo', 'latestMovement'])->get();
@@ -49,6 +67,8 @@ class VehicleController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
+        $this->authorize('create', Vehicle::class);
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'vehicle_number' => 'nullable|string|max:255|unique:vehicles',
@@ -102,6 +122,8 @@ class VehicleController extends Controller
         $vehicle = Vehicle::with(['movements.movedByUser', 'assignedTo', 'createdBy', 'updatedBy'])
             ->findOrFail($id);
 
+        $this->authorize('view', $vehicle);
+
         return response()->json([
             'success' => true,
             'data' => $vehicle,
@@ -114,6 +136,8 @@ class VehicleController extends Controller
     public function update(Request $request, int $id): JsonResponse
     {
         $vehicle = Vehicle::findOrFail($id);
+
+        $this->authorize('update', $vehicle);
 
         $validated = $request->validate([
             'name' => 'sometimes|required|string|max:255',
@@ -162,6 +186,9 @@ class VehicleController extends Controller
     public function destroy(int $id): JsonResponse
     {
         $vehicle = Vehicle::findOrFail($id);
+
+        $this->authorize('delete', $vehicle);
+
         $vehicle->delete();
 
         return response()->json([
@@ -175,6 +202,10 @@ class VehicleController extends Controller
      */
     public function move(Request $request, int $id): JsonResponse
     {
+        $vehicle = Vehicle::findOrFail($id);
+
+        $this->authorize('move', $vehicle);
+
         $validated = $request->validate([
             'location_type' => 'required|in:project,yard,shop,vendor,in_transit',
             'location_id' => 'nullable|integer',
@@ -210,6 +241,10 @@ class VehicleController extends Controller
      */
     public function history(int $id): JsonResponse
     {
+        $vehicle = Vehicle::findOrFail($id);
+
+        $this->authorize('view', $vehicle);
+
         $history = $this->vehicleService->getVehicleHistory($id);
 
         return response()->json([
@@ -223,6 +258,10 @@ class VehicleController extends Controller
      */
     public function updateOdometer(Request $request, int $id): JsonResponse
     {
+        $vehicle = Vehicle::findOrFail($id);
+
+        $this->authorize('update', $vehicle);
+
         $validated = $request->validate([
             'odometer_reading' => 'required|numeric|min:0',
         ]);
@@ -241,6 +280,8 @@ class VehicleController extends Controller
      */
     public function availableForDate(string $date): JsonResponse
     {
+        $this->authorize('viewAny', Vehicle::class);
+
         $availableVehicles = $this->vehicleService->getAvailableVehiclesForDate($date);
 
         return response()->json([
@@ -260,6 +301,9 @@ class VehicleController extends Controller
         ]);
 
         $vehicle = Vehicle::findOrFail($id);
+
+        $this->authorize('update', $vehicle);
+
         $vehicle->update([
             'assigned_to_user_id' => $validated['user_id'],
             'updated_by' => auth()->id(),
@@ -277,6 +321,10 @@ class VehicleController extends Controller
      */
     public function generateQrCode(int $id): JsonResponse
     {
+        $vehicle = Vehicle::findOrFail($id);
+
+        $this->authorize('update', $vehicle);
+
         $qrCode = $this->vehicleService->generateQrCode($id);
 
         return response()->json([

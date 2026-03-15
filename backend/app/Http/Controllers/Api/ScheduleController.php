@@ -19,6 +19,8 @@ class ScheduleController extends Controller
 
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', Schedule::class);
+
         $query = Schedule::with(['project', 'crewAssignments.user', 'equipmentAssignments.equipment', 'materials']);
 
         if ($request->has('date')) {
@@ -43,6 +45,8 @@ class ScheduleController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        $this->authorize('create', Schedule::class);
+
         $validated = $request->validate([
             'project_id' => 'required|exists:projects,id',
             'date' => 'required|date',
@@ -73,6 +77,8 @@ class ScheduleController extends Controller
             'materials',
         ])->findOrFail($id);
 
+        $this->authorize('view', $schedule);
+
         return response()->json([
             'success' => true,
             'data' => $schedule,
@@ -82,6 +88,8 @@ class ScheduleController extends Controller
     public function update(Request $request, int $id): JsonResponse
     {
         $schedule = Schedule::findOrFail($id);
+
+        $this->authorize('update', $schedule);
 
         $validated = $request->validate([
             'project_id' => 'sometimes|required|exists:projects,id',
@@ -107,6 +115,9 @@ class ScheduleController extends Controller
     public function destroy(int $id): JsonResponse
     {
         $schedule = Schedule::findOrFail($id);
+
+        $this->authorize('delete', $schedule);
+
         $schedule->delete();
 
         return response()->json([
@@ -117,6 +128,9 @@ class ScheduleController extends Controller
 
     public function assignCrew(Request $request, int $id): JsonResponse
     {
+        $schedule = Schedule::findOrFail($id);
+        $this->authorize('assignCrew', $schedule);
+
         $validated = $request->validate([
             'user_ids' => 'required|array',
             'user_ids.*' => 'exists:users,id',
@@ -142,6 +156,9 @@ class ScheduleController extends Controller
 
     public function assignEquipment(Request $request, int $id): JsonResponse
     {
+        $schedule = Schedule::findOrFail($id);
+        $this->authorize('assignEquipment', $schedule);
+
         $validated = $request->validate([
             'equipment_ids' => 'required|array',
             'equipment_ids.*' => 'exists:equipment,id',
@@ -166,6 +183,8 @@ class ScheduleController extends Controller
     public function addMaterials(Request $request, int $id): JsonResponse
     {
         $schedule = Schedule::findOrFail($id);
+
+        $this->authorize('update', $schedule);
 
         $validated = $request->validate([
             'materials' => 'required|array',
@@ -193,6 +212,8 @@ class ScheduleController extends Controller
 
     public function duplicate(int $id): JsonResponse
     {
+        $this->authorize('create', Schedule::class);
+
         $originalSchedule = Schedule::with([
             'crewAssignments',
             'equipmentAssignments',
@@ -275,6 +296,9 @@ class ScheduleController extends Controller
     public function deleteMaterial(int $scheduleId, int $materialId): JsonResponse
     {
         $schedule = Schedule::findOrFail($scheduleId);
+
+        $this->authorize('update', $schedule);
+
         $material = $schedule->materials()->findOrFail($materialId);
 
         $material->delete();
@@ -288,6 +312,9 @@ class ScheduleController extends Controller
     public function removeCrewMember(int $scheduleId, int $userId): JsonResponse
     {
         $schedule = Schedule::findOrFail($scheduleId);
+
+        $this->authorize('assignCrew', $schedule);
+
         $assignment = $schedule->crewAssignments()->where('user_id', $userId)->first();
 
         if (!$assignment) {
@@ -309,6 +336,9 @@ class ScheduleController extends Controller
     public function removeEquipment(int $scheduleId, int $equipmentId): JsonResponse
     {
         $schedule = Schedule::findOrFail($scheduleId);
+
+        $this->authorize('assignEquipment', $schedule);
+
         $assignment = $schedule->equipmentAssignments()->where('equipment_id', $equipmentId)->first();
 
         if (!$assignment) {

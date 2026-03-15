@@ -161,19 +161,51 @@
         </q-item-section>
       </q-item>
 
-      <!-- Equipment Movement -->
+      <!-- Dispatch Board -->
       <q-item
-        v-if="can('equipment.move')"
+        v-if="can('transport.view')"
         clickable
-        :to="{ name: 'EquipmentMovement' }"
+        :to="{ name: 'DispatchDashboard' }"
         active-class="sidebar-item-active"
         class="sidebar-item"
       >
         <q-item-section avatar>
-          <q-icon name="local_shipping" />
+          <q-icon name="hub" />
         </q-item-section>
         <q-item-section v-if="drawerExpanded">
-          <q-item-label>Equipment Movement</q-item-label>
+          <q-item-label>Dispatch Board</q-item-label>
+        </q-item-section>
+      </q-item>
+
+      <!-- My Assignments (Driver) -->
+      <q-item
+        v-if="can('transport.execute')"
+        clickable
+        :to="{ name: 'DriverAssignments' }"
+        active-class="sidebar-item-active"
+        class="sidebar-item"
+      >
+        <q-item-section avatar>
+          <q-icon name="assignment" />
+        </q-item-section>
+        <q-item-section v-if="drawerExpanded">
+          <q-item-label>My Assignments</q-item-label>
+        </q-item-section>
+      </q-item>
+
+      <!-- Vehicles -->
+      <q-item
+        v-if="can('vehicles.view')"
+        clickable
+        :to="{ name: 'Vehicles' }"
+        active-class="sidebar-item-active"
+        class="sidebar-item"
+      >
+        <q-item-section avatar>
+          <q-icon name="directions_car" />
+        </q-item-section>
+        <q-item-section v-if="drawerExpanded">
+          <q-item-label>Vehicles</q-item-label>
         </q-item-section>
       </q-item>
 

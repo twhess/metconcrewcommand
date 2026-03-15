@@ -11,6 +11,8 @@ class CompanyController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', Company::class);
+
         $query = Company::with(['locations', 'primaryLocation', 'contacts', 'createdBy', 'updatedBy']);
 
         if ($request->has('type')) {
@@ -31,6 +33,8 @@ class CompanyController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        $this->authorize('create', Company::class);
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'type' => 'required|in:customer,vendor,contractor,internal',
@@ -58,6 +62,8 @@ class CompanyController extends Controller
         $company = Company::with(['locations', 'primaryLocation', 'contacts.roles', 'createdBy', 'updatedBy'])
             ->findOrFail($id);
 
+        $this->authorize('view', $company);
+
         return response()->json([
             'success' => true,
             'data' => $company,
@@ -67,6 +73,8 @@ class CompanyController extends Controller
     public function update(Request $request, int $id): JsonResponse
     {
         $company = Company::findOrFail($id);
+
+        $this->authorize('update', $company);
 
         $validated = $request->validate([
             'name' => 'sometimes|required|string|max:255',
@@ -93,6 +101,9 @@ class CompanyController extends Controller
     public function destroy(int $id): JsonResponse
     {
         $company = Company::findOrFail($id);
+
+        $this->authorize('delete', $company);
+
         $company->delete();
 
         return response()->json([

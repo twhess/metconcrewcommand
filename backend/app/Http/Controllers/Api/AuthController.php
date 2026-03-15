@@ -31,24 +31,38 @@ class AuthController extends Controller
         // Load user's roles with their permissions
         $user->load('roles.permissions');
 
+        $isSecure = app()->environment('production');
+        $cookie = cookie(
+            'auth_token',
+            $token,
+            (int) config('sanctum.expiration', 480),
+            '/',
+            null,
+            $isSecure,  // secure flag — HTTPS only in production
+            true,       // httpOnly — not accessible via JS
+            false,      // raw
+            $isSecure ? 'None' : 'Lax'  // sameSite
+        );
+
         return response()->json([
-            'token' => $token,
             'user' => [
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
                 'roles' => $user->roles,
             ]
-        ], 200);
+        ], 200)->withCookie($cookie);
     }
 
     public function logout(Request $request)
     {
         $request->user()->currentAccessToken()->delete();
 
+        $cookie = cookie()->forget('auth_token');
+
         return response()->json([
             'message' => 'Logged out successfully'
-        ], 200);
+        ], 200)->withCookie($cookie);
     }
 
     public function me(Request $request)

@@ -14,6 +14,8 @@ class YardController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', Yard::class);
+
         $query = Yard::query();
 
         if ($request->has('is_active')) {
@@ -37,6 +39,8 @@ class YardController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
+        $this->authorize('create', Yard::class);
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'yard_type' => 'required|in:main_yard,satellite_yard,shop,storage',
@@ -72,6 +76,8 @@ class YardController extends Controller
     {
         $yard = Yard::with(['createdBy', 'updatedBy'])->findOrFail($id);
 
+        $this->authorize('view', $yard);
+
         return response()->json([
             'success' => true,
             'data' => $yard,
@@ -84,6 +90,8 @@ class YardController extends Controller
     public function update(Request $request, int $id): JsonResponse
     {
         $yard = Yard::findOrFail($id);
+
+        $this->authorize('update', $yard);
 
         $validated = $request->validate([
             'name' => 'sometimes|required|string|max:255',
@@ -119,6 +127,9 @@ class YardController extends Controller
     public function destroy(int $id): JsonResponse
     {
         $yard = Yard::findOrFail($id);
+
+        $this->authorize('delete', $yard);
+
         $yard->delete();
 
         return response()->json([

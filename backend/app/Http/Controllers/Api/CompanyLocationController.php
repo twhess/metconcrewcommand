@@ -12,6 +12,8 @@ class CompanyLocationController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', CompanyLocation::class);
+
         $query = CompanyLocation::with(['company', 'createdBy', 'updatedBy']);
 
         if ($request->has('company_id')) {
@@ -38,6 +40,8 @@ class CompanyLocationController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        $this->authorize('create', CompanyLocation::class);
+
         $validated = $request->validate([
             'company_id' => 'required|exists:companies,id',
             'location_name' => 'required|string|max:255',
@@ -80,6 +84,8 @@ class CompanyLocationController extends Controller
         $location = CompanyLocation::with(['company', 'contactRoles.contact', 'contactRoles.role', 'createdBy', 'updatedBy'])
             ->findOrFail($id);
 
+        $this->authorize('view', $location);
+
         return response()->json([
             'success' => true,
             'data' => $location,
@@ -89,6 +95,8 @@ class CompanyLocationController extends Controller
     public function update(Request $request, string $id): JsonResponse
     {
         $location = CompanyLocation::findOrFail($id);
+
+        $this->authorize('update', $location);
 
         $validated = $request->validate([
             'location_name' => 'sometimes|required|string|max:255',
@@ -130,6 +138,8 @@ class CompanyLocationController extends Controller
     public function destroy(string $id): JsonResponse
     {
         $location = CompanyLocation::findOrFail($id);
+
+        $this->authorize('delete', $location);
 
         // Prevent deletion if this is the primary location
         if ($location->is_primary) {

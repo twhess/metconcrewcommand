@@ -16,6 +16,8 @@ class ProjectSpecificationController extends Controller
     {
         $project = Project::findOrFail($projectId);
 
+        $this->authorize('view', $project);
+
         $query = $project->specifications();
 
         // Filter by category
@@ -57,6 +59,8 @@ class ProjectSpecificationController extends Controller
     {
         $project = Project::findOrFail($projectId);
 
+        $this->authorize('update', $project);
+
         $validated = $request->validate([
             'category' => 'required|string|max:50',
             'requirement_name' => 'required|string|max:255',
@@ -94,6 +98,9 @@ class ProjectSpecificationController extends Controller
     public function show(int $projectId, int $id): JsonResponse
     {
         $project = Project::findOrFail($projectId);
+
+        $this->authorize('view', $project);
+
         $specification = $project->specifications()->with(['verifiedBy'])->findOrFail($id);
 
         return response()->json([
@@ -108,6 +115,9 @@ class ProjectSpecificationController extends Controller
     public function update(Request $request, int $projectId, int $id): JsonResponse
     {
         $project = Project::findOrFail($projectId);
+
+        $this->authorize('update', $project);
+
         $specification = $project->specifications()->findOrFail($id);
 
         $validated = $request->validate([
@@ -137,6 +147,9 @@ class ProjectSpecificationController extends Controller
     public function destroy(int $projectId, int $id): JsonResponse
     {
         $project = Project::findOrFail($projectId);
+
+        $this->authorize('update', $project);
+
         $specification = $project->specifications()->findOrFail($id);
         $specification->delete();
 
@@ -152,6 +165,9 @@ class ProjectSpecificationController extends Controller
     public function verify(Request $request, int $projectId, int $id): JsonResponse
     {
         $project = Project::findOrFail($projectId);
+
+        $this->authorize('update', $project);
+
         $specification = $project->specifications()->findOrFail($id);
 
         $validated = $request->validate([

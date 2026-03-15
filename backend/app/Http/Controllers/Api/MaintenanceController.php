@@ -23,6 +23,8 @@ class MaintenanceController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', MaintenanceRecord::class);
+
         $query = MaintenanceRecord::query()
             ->with(['maintainable', 'parts', 'performedByUser', 'vendorCompany']);
 
@@ -80,6 +82,8 @@ class MaintenanceController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
+        $this->authorize('create', MaintenanceRecord::class);
+
         $validated = $request->validate([
             'maintainable_type' => 'required|string|in:App\\Models\\Equipment,App\\Models\\Vehicle',
             'maintainable_id' => 'required|integer',
@@ -161,6 +165,8 @@ class MaintenanceController extends Controller
             'updatedBy'
         ])->findOrFail($id);
 
+        $this->authorize('view', $record);
+
         return response()->json($record);
     }
 
@@ -191,6 +197,8 @@ class MaintenanceController extends Controller
 
         $record = MaintenanceRecord::findOrFail($id);
 
+        $this->authorize('update', $record);
+
         $validated['updated_by'] = auth()->id();
 
         $record->update($validated);
@@ -213,6 +221,9 @@ class MaintenanceController extends Controller
     public function destroy(int $id): JsonResponse
     {
         $record = MaintenanceRecord::findOrFail($id);
+
+        $this->authorize('delete', $record);
+
         $record->delete();
 
         return response()->json([
@@ -226,6 +237,9 @@ class MaintenanceController extends Controller
      */
     public function addPart(Request $request, int $maintenanceRecordId): JsonResponse
     {
+        $record = MaintenanceRecord::findOrFail($maintenanceRecordId);
+        $this->authorize('update', $record);
+
         $validated = $request->validate([
             'part_number' => 'nullable|string|max:100',
             'part_name' => 'required|string|max:255',
@@ -262,6 +276,9 @@ class MaintenanceController extends Controller
             'returned_date' => 'required|date',
         ]);
 
+        $part = MaintenancePart::findOrFail($partId);
+        $this->authorize('update', MaintenanceRecord::findOrFail($part->maintenance_record_id));
+
         $part = $this->maintenanceService->returnCoreCharge(
             $partId,
             \Carbon\Carbon::parse($validated['returned_date'])
@@ -279,6 +296,8 @@ class MaintenanceController extends Controller
      */
     public function upcomingForItem(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', MaintenanceRecord::class);
+
         $validated = $request->validate([
             'maintainable_type' => 'required|string|in:App\\Models\\Equipment,App\\Models\\Vehicle',
             'maintainable_id' => 'required|integer',
@@ -302,6 +321,8 @@ class MaintenanceController extends Controller
      */
     public function overdueForItem(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', MaintenanceRecord::class);
+
         $validated = $request->validate([
             'maintainable_type' => 'required|string|in:App\\Models\\Equipment,App\\Models\\Vehicle',
             'maintainable_id' => 'required|integer',
@@ -323,6 +344,8 @@ class MaintenanceController extends Controller
      */
     public function allOverdue(): JsonResponse
     {
+        $this->authorize('viewAny', MaintenanceRecord::class);
+
         $overdue = $this->maintenanceService->getAllOverdueMaintenance();
 
         return response()->json([
@@ -337,6 +360,8 @@ class MaintenanceController extends Controller
      */
     public function dashboard(): JsonResponse
     {
+        $this->authorize('viewAny', MaintenanceRecord::class);
+
         // Get overdue maintenance
         $overdueSchedules = $this->maintenanceService->getAllOverdueMaintenance();
 
@@ -427,6 +452,8 @@ class MaintenanceController extends Controller
      */
     public function historyForItem(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', MaintenanceRecord::class);
+
         $validated = $request->validate([
             'maintainable_type' => 'required|string|in:App\\Models\\Equipment,App\\Models\\Vehicle',
             'maintainable_id' => 'required|integer',
@@ -481,6 +508,8 @@ class MaintenanceController extends Controller
      */
     public function costReport(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', MaintenanceRecord::class);
+
         $validated = $request->validate([
             'from_date' => 'required|date',
             'to_date' => 'required|date',

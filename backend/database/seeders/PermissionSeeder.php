@@ -17,18 +17,22 @@ class PermissionSeeder extends Seeder
             'projects' => ['view', 'create', 'update', 'delete'],
             'schedules' => ['view', 'create', 'update', 'delete'],
             'equipment' => ['view', 'create', 'update', 'delete', 'move'],
+            'vehicles' => ['view', 'create', 'update', 'delete', 'move'],
             'inventory' => ['view', 'create', 'update', 'delete', 'move', 'adjust'],
             'reports' => ['view', 'export'],
             'vacations' => ['view', 'create', 'update', 'delete', 'approve'],
+            'transport' => ['view', 'create', 'assign', 'execute', 'cancel'],
         ];
 
         foreach ($modules as $module => $actions) {
             foreach ($actions as $action) {
-                Permission::create([
-                    'name' => "{$module}.{$action}",
-                    'display_name' => ucfirst($action) . ' ' . ucfirst($module),
-                    'module' => $module,
-                ]);
+                Permission::firstOrCreate(
+                    ['name' => "{$module}.{$action}"],
+                    [
+                        'display_name' => ucfirst($action) . ' ' . ucfirst($module),
+                        'module' => $module,
+                    ]
+                );
             }
         }
     }

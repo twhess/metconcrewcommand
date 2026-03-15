@@ -1,4 +1,4 @@
-import axios, { type AxiosInstance, type InternalAxiosRequestConfig, type AxiosResponse, type AxiosError } from 'axios'
+import axios, { type AxiosInstance, type AxiosResponse, type AxiosError } from 'axios'
 import { useAuthStore } from '@/stores/auth'
 import router from '@/router'
 
@@ -11,28 +11,36 @@ const apiClient: AxiosInstance = axios.create({
   withCredentials: true
 })
 
-apiClient.interceptors.request.use(
-  (config: InternalAxiosRequestConfig): InternalAxiosRequestConfig => {
-    const authStore = useAuthStore()
-    if (authStore.token) {
-      config.headers.Authorization = `Bearer ${authStore.token}`
-    }
-    return config
-  },
-  (error: AxiosError): Promise<AxiosError> => {
-    return Promise.reject(error)
-  }
-)
-
 apiClient.interceptors.response.use(
   (response: AxiosResponse): AxiosResponse => {
     return response
   },
-  (error: AxiosError): Promise<AxiosError> => {
+  async (error: AxiosError): Promise<AxiosResponse | never> => {
+    // Offline: the service worker's BackgroundSync has queued write requests.
+    // Notify the user and return a synthetic response so callers don't hard-fail.
+    if (!error.response && !navigator.onLine) {
+      const { Notify } = await import('quasar')
+      Notify.create({
+        type: 'warning',
+        message: 'You are offline. This action has been queued.',
+        icon: 'cloud_off',
+        timeout: 3000
+      })
+      return {
+        data: { success: true, queued: true, message: 'Queued for sync' },
+        status: 202,
+        statusText: 'Accepted (Queued)',
+        headers: {},
+        config: error.config!
+      } as AxiosResponse
+    }
+
     if (error.response && error.response.status === 401) {
       const authStore = useAuthStore()
       authStore.clearAuth()
-      router.push('/login')
+      if (router.currentRoute.value.path !== '/login') {
+        router.push('/login')
+      }
     }
     return Promise.reject(error)
   }

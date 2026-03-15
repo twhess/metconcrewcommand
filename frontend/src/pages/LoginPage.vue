@@ -64,7 +64,8 @@ const handleLogin = async (): Promise<void> => {
       password: password.value
     })
 
-    authStore.setAuth(response.data.token, response.data.user)
+    console.log('Login response:', response.status, response.data)
+    authStore.setAuth(response.data.user)
 
     $q.notify({
       type: 'positive',
@@ -73,6 +74,7 @@ const handleLogin = async (): Promise<void> => {
 
     router.push('/dashboard')
   } catch (error) {
+    console.error('Login error:', error)
     const axiosError = error as AxiosError<{ message?: string }>
     $q.notify({
       type: 'negative',

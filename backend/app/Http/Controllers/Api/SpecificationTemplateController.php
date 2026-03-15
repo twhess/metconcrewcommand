@@ -15,6 +15,8 @@ class SpecificationTemplateController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', SpecificationTemplate::class);
+
         $query = SpecificationTemplate::query()->with('items');
 
         // Filter by project type
@@ -37,6 +39,8 @@ class SpecificationTemplateController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
+        $this->authorize('create', SpecificationTemplate::class);
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'slug' => 'required|string|max:255|unique:specification_templates,slug',
@@ -92,6 +96,8 @@ class SpecificationTemplateController extends Controller
     {
         $template = SpecificationTemplate::with('items')->findOrFail($id);
 
+        $this->authorize('view', $template);
+
         return response()->json([
             'success' => true,
             'data' => $template
@@ -104,6 +110,8 @@ class SpecificationTemplateController extends Controller
     public function update(Request $request, int $id): JsonResponse
     {
         $template = SpecificationTemplate::findOrFail($id);
+
+        $this->authorize('update', $template);
 
         $validated = $request->validate([
             'name' => 'sometimes|string|max:255',
@@ -129,6 +137,9 @@ class SpecificationTemplateController extends Controller
     public function destroy(int $id): JsonResponse
     {
         $template = SpecificationTemplate::findOrFail($id);
+
+        $this->authorize('delete', $template);
+
         $template->delete();
 
         return response()->json([
@@ -143,6 +154,8 @@ class SpecificationTemplateController extends Controller
     public function duplicate(Request $request, int $id): JsonResponse
     {
         $template = SpecificationTemplate::with('items')->findOrFail($id);
+
+        $this->authorize('create', SpecificationTemplate::class);
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
@@ -164,6 +177,8 @@ class SpecificationTemplateController extends Controller
     public function applyToProject(Request $request, int $id): JsonResponse
     {
         $template = SpecificationTemplate::with('items')->findOrFail($id);
+
+        $this->authorize('update', $template);
 
         $validated = $request->validate([
             'project_id' => 'required|exists:projects,id',

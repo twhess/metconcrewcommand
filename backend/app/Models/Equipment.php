@@ -102,6 +102,16 @@ class Equipment extends Model
     /**
      * Check if equipment is currently in transit
      */
+    public function transportOrders()
+    {
+        return $this->hasMany(TransportOrder::class);
+    }
+
+    public function activeTransportOrders()
+    {
+        return $this->hasMany(TransportOrder::class)->whereNotIn('status', ['completed', 'cancelled']);
+    }
+
     public function isInTransit(): bool
     {
         return $this->status === 'in_transit' || $this->current_location_type === 'in_transit';

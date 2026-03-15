@@ -3,31 +3,31 @@ import { ref, computed } from 'vue'
 import type { User } from '@/types'
 
 export const useAuthStore = defineStore('auth', () => {
-  const token = ref<string | null>(localStorage.getItem('auth_token') || null)
+  const storedUser = localStorage.getItem('user')
   const user = ref<User | null>(
-    localStorage.getItem('user')
-      ? JSON.parse(localStorage.getItem('user') as string)
+    storedUser && storedUser !== 'undefined'
+      ? JSON.parse(storedUser)
       : null
   )
 
-  const isAuthenticated = computed<boolean>(() => !!token.value)
+  const isAuthenticated = computed<boolean>(() => !!user.value)
 
-  function setAuth(authToken: string, userData: User): void {
-    token.value = authToken
+  function setAuth(userData: User): void {
     user.value = userData
-    localStorage.setItem('auth_token', authToken)
     localStorage.setItem('user', JSON.stringify(userData))
   }
 
   function clearAuth(): void {
-    token.value = null
     user.value = null
-    localStorage.removeItem('auth_token')
     localStorage.removeItem('user')
+
+    // Clear service worker caches to prevent data leaking between users
+    if ('caches' in window) {
+      caches.keys().then(keys => keys.forEach(k => caches.delete(k)))
+    }
   }
 
   return {
-    token,
     user,
     isAuthenticated,
     setAuth,

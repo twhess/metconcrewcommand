@@ -18,6 +18,8 @@ class ProjectContactController extends Controller
     {
         $project = Project::findOrFail($projectId);
 
+        $this->authorize('view', $project);
+
         $query = $project->projectContacts()->with(['contact.company']);
 
         // Filter by role
@@ -50,6 +52,8 @@ class ProjectContactController extends Controller
     public function store(Request $request, int $projectId): JsonResponse
     {
         $project = Project::findOrFail($projectId);
+
+        $this->authorize('update', $project);
 
         $validated = $request->validate([
             'contact_id' => 'required|integer|exists:contacts,id',
@@ -104,6 +108,9 @@ class ProjectContactController extends Controller
     public function show(int $projectId, int $id): JsonResponse
     {
         $project = Project::findOrFail($projectId);
+
+        $this->authorize('view', $project);
+
         $projectContact = $project->projectContacts()->with(['contact.company'])->findOrFail($id);
 
         return response()->json([
@@ -118,6 +125,9 @@ class ProjectContactController extends Controller
     public function update(Request $request, int $projectId, int $id): JsonResponse
     {
         $project = Project::findOrFail($projectId);
+
+        $this->authorize('update', $project);
+
         $projectContact = $project->projectContacts()->findOrFail($id);
 
         $validated = $request->validate([
@@ -152,6 +162,9 @@ class ProjectContactController extends Controller
     public function destroy(int $projectId, int $id): JsonResponse
     {
         $project = Project::findOrFail($projectId);
+
+        $this->authorize('update', $project);
+
         $projectContact = $project->projectContacts()->findOrFail($id);
         $projectContact->delete();
 
@@ -167,6 +180,8 @@ class ProjectContactController extends Controller
     public function primaryByRole(int $projectId, string $role): JsonResponse
     {
         $project = Project::findOrFail($projectId);
+
+        $this->authorize('view', $project);
 
         $primaryContact = $project->projectContacts()
             ->with(['contact.company'])

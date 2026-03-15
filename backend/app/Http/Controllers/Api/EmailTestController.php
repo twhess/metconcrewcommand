@@ -12,6 +12,10 @@ class EmailTestController extends Controller
 {
     public function sendTest(Request $request)
     {
+        if (!auth()->user()->hasPermission('roles.update')) {
+            abort(403, 'Only administrators can send test emails.');
+        }
+
         $validated = $request->validate([
             'to' => 'required|email',
             'subject' => 'nullable|string|max:255',
@@ -46,6 +50,10 @@ class EmailTestController extends Controller
 
     public function getConfig()
     {
+        if (!auth()->user()->hasPermission('roles.update')) {
+            abort(403, 'Only administrators can view email configuration.');
+        }
+
         return response()->json([
             'mailer' => config('mail.default'),
             'from_address' => config('mail.from.address'),

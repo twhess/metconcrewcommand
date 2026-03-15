@@ -17,6 +17,8 @@ class ProjectPhaseController extends Controller
     {
         $project = Project::findOrFail($projectId);
 
+        $this->authorize('view', $project);
+
         $query = $project->phases();
 
         // Filter by status
@@ -56,6 +58,8 @@ class ProjectPhaseController extends Controller
     public function store(Request $request, int $projectId): JsonResponse
     {
         $project = Project::findOrFail($projectId);
+
+        $this->authorize('update', $project);
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
@@ -107,6 +111,9 @@ class ProjectPhaseController extends Controller
     public function show(int $projectId, int $id): JsonResponse
     {
         $project = Project::findOrFail($projectId);
+
+        $this->authorize('view', $project);
+
         $phase = $project->phases()->with(['completedBy'])->findOrFail($id);
 
         return response()->json([
@@ -121,6 +128,9 @@ class ProjectPhaseController extends Controller
     public function update(Request $request, int $projectId, int $id): JsonResponse
     {
         $project = Project::findOrFail($projectId);
+
+        $this->authorize('update', $project);
+
         $phase = $project->phases()->findOrFail($id);
 
         $validated = $request->validate([
@@ -157,6 +167,9 @@ class ProjectPhaseController extends Controller
     public function destroy(int $projectId, int $id): JsonResponse
     {
         $project = Project::findOrFail($projectId);
+
+        $this->authorize('update', $project);
+
         $phase = $project->phases()->findOrFail($id);
         $phase->delete();
 
@@ -172,6 +185,9 @@ class ProjectPhaseController extends Controller
     public function complete(Request $request, int $projectId, int $id): JsonResponse
     {
         $project = Project::findOrFail($projectId);
+
+        $this->authorize('update', $project);
+
         $phase = $project->phases()->findOrFail($id);
 
         $validated = $request->validate([
@@ -208,6 +224,8 @@ class ProjectPhaseController extends Controller
     public function reorder(Request $request, int $projectId): JsonResponse
     {
         $project = Project::findOrFail($projectId);
+
+        $this->authorize('update', $project);
 
         $validated = $request->validate([
             'phases' => 'required|array|min:1',

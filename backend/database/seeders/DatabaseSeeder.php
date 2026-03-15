@@ -13,6 +13,11 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        if (app()->environment('production')) {
+            $this->command->error('Seeders are disabled in production. Use --force with extreme caution.');
+            return;
+        }
+
         // Seed roles first
         $this->call([
             RoleSeeder::class,
@@ -27,7 +32,7 @@ class DatabaseSeeder extends Seeder
             'last_name' => 'User',
             'name' => 'Admin User',
             'email' => 'admin@example.com',
-            'password' => 'password123',
+            'password' => env('SEED_DEFAULT_PASSWORD') ?? throw new \RuntimeException('SEED_DEFAULT_PASSWORD env var must be set'),
             'is_active' => true,
             'is_available' => true,
         ]);
@@ -35,6 +40,9 @@ class DatabaseSeeder extends Seeder
         // Assign admin role to the user
         $adminRole = \App\Models\Role::where('slug', 'admin')->first();
         $admin->roles()->attach($adminRole);
+
+        // Seed employees
+        $this->call(EmployeeSeeder::class);
 
         // Seed companies with locations and contacts
         $this->call(CompanySeeder::class);
@@ -45,6 +53,7 @@ class DatabaseSeeder extends Seeder
             EquipmentSeeder::class,
             VehicleSeeder::class,
             MaintenanceSeeder::class,
+            TransportOrderSeeder::class,
         ]);
     }
 }

@@ -11,6 +11,8 @@ class ContactController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', Contact::class);
+
         $query = Contact::with(['company', 'roles', 'contactRoles.location', 'contactRoles.role', 'createdBy', 'updatedBy']);
 
         if ($request->has('company_id')) {
@@ -31,6 +33,8 @@ class ContactController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        $this->authorize('create', Contact::class);
+
         $validated = $request->validate([
             'company_id' => 'required|exists:companies,id',
             'first_name' => 'required|string|max:255',
@@ -82,6 +86,8 @@ class ContactController extends Controller
         $contact = Contact::with(['company', 'roles', 'contactRoles.location', 'contactRoles.role', 'createdBy', 'updatedBy'])
             ->findOrFail($id);
 
+        $this->authorize('view', $contact);
+
         return response()->json([
             'success' => true,
             'data' => $contact,
@@ -91,6 +97,8 @@ class ContactController extends Controller
     public function update(Request $request, int $id): JsonResponse
     {
         $contact = Contact::findOrFail($id);
+
+        $this->authorize('update', $contact);
 
         $validated = $request->validate([
             'company_id' => 'sometimes|required|exists:companies,id',
@@ -144,6 +152,9 @@ class ContactController extends Controller
     public function destroy(int $id): JsonResponse
     {
         $contact = Contact::findOrFail($id);
+
+        $this->authorize('delete', $contact);
+
         $contact->delete();
 
         return response()->json([

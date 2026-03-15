@@ -20,7 +20,6 @@ export interface LoginRequest {
 }
 
 export interface AuthResponse {
-  token: string
   user: User
 }
 
@@ -1115,4 +1114,149 @@ export interface EmailConfigResponse {
   mailer: string
   from_address: string
   from_name: string
+}
+
+// Mileage Log Types
+export interface MileageLog {
+  id: number
+  vehicle_id: number
+  driver_user_id: number
+  driver?: User
+  trip_date: string
+  start_odometer: number
+  end_odometer: number
+  distance_miles: number
+  trip_type: 'business' | 'personal' | 'commute' | 'delivery' | 'service_call'
+  from_location?: string
+  to_location?: string
+  project_id?: number
+  project?: Project
+  purpose?: string
+  notes?: string
+  created_by?: number
+  updated_by?: number
+  created_at?: string
+  updated_at?: string
+}
+
+// Transport Order Types
+
+export type TransportOrderStatus = 'requested' | 'assigned' | 'picked_up' | 'completed' | 'cancelled'
+
+export interface TransportOrder {
+  id: number
+  order_number: string
+  status: TransportOrderStatus
+  is_adhoc: boolean
+  priority: 'low' | 'normal' | 'high' | 'urgent'
+
+  equipment_id: number
+  equipment?: Equipment
+
+  pickup_location_type: string
+  pickup_location_id: number
+  dropoff_location_type: string
+  dropoff_location_id: number
+
+  assigned_driver_id?: number
+  assigned_driver?: User
+  assigned_vehicle_id?: number
+  assigned_vehicle?: Vehicle
+
+  scheduled_date: string
+  scheduled_time?: string
+  special_instructions?: string
+
+  requested_by: number
+  requested_by_user?: User
+
+  pickup_movement_id?: number
+  pickup_movement?: EquipmentMovement
+  dropoff_movement_id?: number
+  dropoff_movement?: EquipmentMovement
+
+  picked_up_at?: string
+  delivered_at?: string
+  completed_at?: string
+  cancelled_at?: string
+  cancellation_reason?: string
+
+  created_by?: number
+  updated_by?: number
+  created_at?: string
+  updated_at?: string
+}
+
+export interface CreateTransportOrderRequest {
+  equipment_id: number
+  pickup_location_type?: string
+  pickup_location_id?: number
+  dropoff_location_type: string
+  dropoff_location_id: number
+  priority?: string
+  scheduled_date: string
+  scheduled_time?: string
+  special_instructions?: string
+  assigned_driver_id?: number
+  assigned_vehicle_id?: number
+}
+
+export interface AssignDriverRequest {
+  assigned_driver_id: number
+  assigned_vehicle_id: number
+}
+
+export interface TransportActionRequest {
+  hours_reading?: number
+  gps_latitude?: number
+  gps_longitude?: number
+  scanned_via_qr?: boolean
+  device_info?: string
+  notes?: string
+}
+
+export interface AdhocPickupRequest {
+  equipment_id: number
+  pickup_location_type: string
+  pickup_location_id: number
+  dropoff_location_type: string
+  dropoff_location_id: number
+  transport_vehicle_id?: number
+  priority?: string
+  hours_reading?: number
+  gps_latitude?: number
+  gps_longitude?: number
+  scanned_via_qr?: boolean
+  device_info?: string
+  notes?: string
+}
+
+export interface DispatchSummary {
+  date: string
+  counts: {
+    requested: number
+    assigned: number
+    picked_up: number
+    completed: number
+    cancelled: number
+  }
+}
+
+export interface MileageReport {
+  by_vehicle: Array<{
+    vehicle_id: number
+    total_miles: number
+    trip_count: number
+    vehicle?: Vehicle
+  }>
+  by_trip_type: Array<{
+    trip_type: string
+    total_miles: number
+    trip_count: number
+  }>
+  totals: {
+    total_miles: number
+    total_trips: number
+    avg_trip_distance: number
+  }
 }

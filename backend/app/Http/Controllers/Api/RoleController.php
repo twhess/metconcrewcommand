@@ -12,6 +12,8 @@ class RoleController extends Controller
 {
     public function index(): JsonResponse
     {
+        $this->authorize('viewAny', Role::class);
+
         $roles = Role::with('permissions')->get();
 
         return response()->json([
@@ -22,6 +24,8 @@ class RoleController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        $this->authorize('create', Role::class);
+
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:roles',
             'display_name' => 'required|string|max:255',
@@ -44,6 +48,8 @@ class RoleController extends Controller
     {
         $role = Role::with('permissions')->findOrFail($id);
 
+        $this->authorize('view', $role);
+
         return response()->json([
             'success' => true,
             'data' => $role,
@@ -53,6 +59,8 @@ class RoleController extends Controller
     public function update(Request $request, int $id): JsonResponse
     {
         $role = Role::findOrFail($id);
+
+        $this->authorize('update', $role);
 
         $validated = $request->validate([
             'name' => 'sometimes|required|string|max:255|unique:roles,name,' . $id,
@@ -76,6 +84,8 @@ class RoleController extends Controller
     {
         $role = Role::findOrFail($id);
 
+        $this->authorize('delete', $role);
+
         // Prevent deletion of admin role
         if ($role->name === 'admin') {
             return response()->json([
@@ -96,6 +106,8 @@ class RoleController extends Controller
     {
         $role = Role::findOrFail($id);
 
+        $this->authorize('assignPermissions', $role);
+
         $validated = $request->validate([
             'permission_ids' => 'required|array',
             'permission_ids.*' => 'exists:permissions,id',
@@ -112,6 +124,8 @@ class RoleController extends Controller
 
     public function getAllPermissions(): JsonResponse
     {
+        $this->authorize('viewAny', Role::class);
+
         // Get all permissions grouped by module
         $permissions = Permission::all()->groupBy('module');
 

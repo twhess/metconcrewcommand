@@ -1,0 +1,81 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy:
+    name: Build & Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Build frontend
+        working-directory: frontend
+        env:
+          VITE_API_BASE_URL: ${{ secrets.PRODUCTION_API_URL }}
+        run: |
+          npm ci
+          npm run build
+
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd /var/www/crewcommand
+
+            # Pull latest master
+            git pull origin master
+
+            # Backend: install PHP dependencies (no dev deps in production)
+            cd /var/www/crewcommand/backend
+            composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
+
+            # Run migrations
+            php artisan migrate --force
+
+            # Clear and rebuild caches
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+
+            echo "Backend deployed successfully"
+
+      - name: Deploy frontend build
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: frontend/dist/*
+          target: /var/www/crewcommand/frontend/dist
+          strip_components: 2
+
+      - name: Post-deploy verification
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            # Restart PHP-FPM / Apache to pick up changes
+            sudo systemctl reload apache2 || sudo systemctl reload httpd || true
+
+            # Verify backend is responding
+            curl -sf http://localhost/api/health || echo "WARNING: Health check failed"
+
+            echo "Deployment complete!"

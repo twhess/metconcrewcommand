@@ -7,8 +7,8 @@
         <q-btn icon="close" flat round dense v-close-popup />
       </q-card-section>
 
-      <q-card-section>
-        <q-form @submit="onSubmit" class="q-gutter-md">
+      <q-card-section class="q-pa-lg">
+        <q-form @submit="onSubmit" class="q-gutter-y-md">
           <!-- Basic Information -->
           <div class="text-subtitle2 text-grey-8">Basic Information</div>
 

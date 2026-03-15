@@ -19,6 +19,8 @@ class InventoryController extends Controller
 
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', InventoryItem::class);
+
         $query = InventoryItem::with('stock.location');
 
         if ($request->has('is_active')) {
@@ -39,6 +41,8 @@ class InventoryController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        $this->authorize('create', InventoryItem::class);
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'sku' => 'nullable|string|max:255|unique:inventory_items',
@@ -68,6 +72,8 @@ class InventoryController extends Controller
     {
         $item = InventoryItem::with(['stock.location', 'transactions'])->findOrFail($id);
 
+        $this->authorize('view', $item);
+
         return response()->json([
             'success' => true,
             'data' => $item,
@@ -77,6 +83,8 @@ class InventoryController extends Controller
     public function update(Request $request, int $id): JsonResponse
     {
         $item = InventoryItem::findOrFail($id);
+
+        $this->authorize('update', $item);
 
         $validated = $request->validate([
             'name' => 'sometimes|required|string|max:255',
@@ -106,6 +114,9 @@ class InventoryController extends Controller
     public function destroy(int $id): JsonResponse
     {
         $item = InventoryItem::findOrFail($id);
+
+        $this->authorize('delete', $item);
+
         $item->delete();
 
         return response()->json([
@@ -116,6 +127,10 @@ class InventoryController extends Controller
 
     public function move(Request $request, int $id): JsonResponse
     {
+        $item = InventoryItem::findOrFail($id);
+
+        $this->authorize('move', $item);
+
         $validated = $request->validate([
             'from_location_id' => 'required|exists:inventory_locations,id',
             'to_location_id' => 'required|exists:inventory_locations,id',
@@ -140,6 +155,10 @@ class InventoryController extends Controller
 
     public function recordUsage(Request $request, int $id): JsonResponse
     {
+        $item = InventoryItem::findOrFail($id);
+
+        $this->authorize('update', $item);
+
         $validated = $request->validate([
             'from_location_id' => 'required|exists:inventory_locations,id',
             'project_id' => 'required|exists:projects,id',
@@ -164,6 +183,8 @@ class InventoryController extends Controller
 
     public function lowStock(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', InventoryItem::class);
+
         $items = $this->inventoryService->getLowStockItems();
 
         return response()->json([
@@ -175,6 +196,8 @@ class InventoryController extends Controller
 
     public function orderSuggestions(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', InventoryItem::class);
+
         $suggestions = $this->inventoryService->getOrderSuggestions();
 
         return response()->json([
@@ -186,6 +209,8 @@ class InventoryController extends Controller
 
     public function byLocation(Request $request, int $locationId): JsonResponse
     {
+        $this->authorize('viewAny', InventoryItem::class);
+
         $inventory = $this->inventoryService->getLocationInventory($locationId);
 
         return response()->json([
@@ -196,6 +221,8 @@ class InventoryController extends Controller
 
     public function byProject(Request $request, int $projectId): JsonResponse
     {
+        $this->authorize('viewAny', InventoryItem::class);
+
         $usage = $this->inventoryService->getProjectUsageSummary($projectId);
 
         return response()->json([
@@ -206,6 +233,8 @@ class InventoryController extends Controller
 
     public function receive(Request $request): JsonResponse
     {
+        $this->authorize('create', InventoryItem::class);
+
         $validated = $request->validate([
             'inventory_item_id' => 'required|exists:inventory_items,id',
             'location_id' => 'required|exists:inventory_locations,id',
@@ -229,6 +258,8 @@ class InventoryController extends Controller
 
     public function receiveBatch(Request $request): JsonResponse
     {
+        $this->authorize('create', InventoryItem::class);
+
         $validated = $request->validate([
             'location_id' => 'required|exists:inventory_locations,id',
             'items' => 'required|array|min:1',
@@ -253,6 +284,8 @@ class InventoryController extends Controller
 
     public function scanCode(string $code): JsonResponse
     {
+        $this->authorize('viewAny', InventoryItem::class);
+
         $item = InventoryItem::where('qr_code', $code)
             ->orWhere('barcode', $code)
             ->orWhere('sku', $code)

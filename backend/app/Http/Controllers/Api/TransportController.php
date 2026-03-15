@@ -27,6 +27,8 @@ class TransportController extends Controller
      */
     public function scanQrCode(string $qrCode): JsonResponse
     {
+        $this->authorize('viewAny', Equipment::class);
+
         // Check if it's equipment
         $equipment = Equipment::where('qr_code', $qrCode)->first();
         if ($equipment) {
@@ -66,6 +68,8 @@ class TransportController extends Controller
      */
     public function pickup(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', Equipment::class);
+
         $validated = $request->validate([
             'item_type' => 'required|in:equipment,vehicle',
             'item_id' => 'required_without:qr_code|integer',
@@ -157,6 +161,8 @@ class TransportController extends Controller
      */
     public function dropoff(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', Equipment::class);
+
         $validated = $request->validate([
             'item_type' => 'required|in:equipment,vehicle',
             'item_id' => 'required_without:qr_code|integer',
@@ -233,6 +239,8 @@ class TransportController extends Controller
      */
     public function itemsInTransit(): JsonResponse
     {
+        $this->authorize('viewAny', Equipment::class);
+
         $equipment = Equipment::where('status', 'in_transit')
             ->orWhere('current_location_type', 'in_transit')
             ->with(['latestMovement.movedByUser', 'latestMovement.transportedByUser', 'latestMovement.transportVehicle'])

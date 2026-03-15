@@ -11,6 +11,8 @@ class VacationController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', Vacation::class);
+
         $query = Vacation::with('user');
 
         if ($request->has('user_id')) {
@@ -35,6 +37,8 @@ class VacationController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        $this->authorize('create', Vacation::class);
+
         $validated = $request->validate([
             'user_id' => 'required|exists:users,id',
             'start_date' => 'required|date',
@@ -59,6 +63,8 @@ class VacationController extends Controller
     {
         $vacation = Vacation::with('user')->findOrFail($id);
 
+        $this->authorize('view', $vacation);
+
         return response()->json([
             'success' => true,
             'data' => $vacation,
@@ -68,6 +74,8 @@ class VacationController extends Controller
     public function update(Request $request, int $id): JsonResponse
     {
         $vacation = Vacation::findOrFail($id);
+
+        $this->authorize('update', $vacation);
 
         $validated = $request->validate([
             'start_date' => 'sometimes|required|date',
@@ -90,6 +98,9 @@ class VacationController extends Controller
     public function destroy(int $id): JsonResponse
     {
         $vacation = Vacation::findOrFail($id);
+
+        $this->authorize('delete', $vacation);
+
         $vacation->delete();
 
         return response()->json([
@@ -101,6 +112,8 @@ class VacationController extends Controller
     public function approve(int $id): JsonResponse
     {
         $vacation = Vacation::findOrFail($id);
+
+        $this->authorize('approve', $vacation);
 
         $vacation->update([
             'approved' => true,

@@ -161,6 +161,8 @@ class EquipmentController extends Controller
 
     public function availableForDate(string $date, Request $request): JsonResponse
     {
+        $this->authorize('viewAny', Equipment::class);
+
         $availableEquipment = [];
         $equipment = Equipment::where('status', 'active')->get();
 
@@ -186,6 +188,9 @@ class EquipmentController extends Controller
      */
     public function updateHours(Request $request, int $id): JsonResponse
     {
+        $equipment = Equipment::findOrFail($id);
+        $this->authorize('update', $equipment);
+
         $validated = $request->validate([
             'hours_reading' => 'required|numeric|min:0',
         ]);
@@ -204,6 +209,9 @@ class EquipmentController extends Controller
      */
     public function generateQrCode(int $id): JsonResponse
     {
+        $equipment = Equipment::findOrFail($id);
+        $this->authorize('update', $equipment);
+
         $qrCode = $this->equipmentService->generateQrCode($id);
 
         return response()->json([

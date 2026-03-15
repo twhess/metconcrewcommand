@@ -18,6 +18,8 @@ class ProjectVendorController extends Controller
     {
         $project = Project::findOrFail($projectId);
 
+        $this->authorize('view', $project);
+
         $query = $project->projectVendors()->with(['company']);
 
         // Filter by vendor type
@@ -56,6 +58,8 @@ class ProjectVendorController extends Controller
     public function store(Request $request, int $projectId): JsonResponse
     {
         $project = Project::findOrFail($projectId);
+
+        $this->authorize('update', $project);
 
         $validated = $request->validate([
             'company_id' => 'required|integer|exists:companies,id',
@@ -114,6 +118,9 @@ class ProjectVendorController extends Controller
     public function show(int $projectId, int $id): JsonResponse
     {
         $project = Project::findOrFail($projectId);
+
+        $this->authorize('view', $project);
+
         $projectVendor = $project->projectVendors()->with(['company'])->findOrFail($id);
 
         return response()->json([
@@ -128,6 +135,9 @@ class ProjectVendorController extends Controller
     public function update(Request $request, int $projectId, int $id): JsonResponse
     {
         $project = Project::findOrFail($projectId);
+
+        $this->authorize('update', $project);
+
         $projectVendor = $project->projectVendors()->findOrFail($id);
 
         $validated = $request->validate([
@@ -164,6 +174,9 @@ class ProjectVendorController extends Controller
     public function destroy(int $projectId, int $id): JsonResponse
     {
         $project = Project::findOrFail($projectId);
+
+        $this->authorize('update', $project);
+
         $projectVendor = $project->projectVendors()->findOrFail($id);
         $projectVendor->delete();
 
@@ -179,6 +192,8 @@ class ProjectVendorController extends Controller
     public function primaryByType(int $projectId, string $type): JsonResponse
     {
         $project = Project::findOrFail($projectId);
+
+        $this->authorize('view', $project);
 
         $primaryVendor = $project->projectVendors()
             ->with(['company'])
@@ -206,6 +221,9 @@ class ProjectVendorController extends Controller
     public function deactivate(int $projectId, int $id): JsonResponse
     {
         $project = Project::findOrFail($projectId);
+
+        $this->authorize('update', $project);
+
         $projectVendor = $project->projectVendors()->findOrFail($id);
 
         $projectVendor->update([
@@ -226,6 +244,9 @@ class ProjectVendorController extends Controller
     public function activate(int $projectId, int $id): JsonResponse
     {
         $project = Project::findOrFail($projectId);
+
+        $this->authorize('update', $project);
+
         $projectVendor = $project->projectVendors()->findOrFail($id);
 
         $projectVendor->update([

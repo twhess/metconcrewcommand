@@ -159,6 +159,9 @@ class ProjectController extends Controller
      */
     public function summary(int $id): JsonResponse
     {
+        $project = Project::findOrFail($id);
+        $this->authorize('view', $project);
+
         $service = new ProjectService();
         $dashboard = $service->getProjectDashboard($id);
 
@@ -173,6 +176,9 @@ class ProjectController extends Controller
      */
     public function complete(Request $request, int $id): JsonResponse
     {
+        $project = Project::findOrFail($id);
+        $this->authorize('update', $project);
+
         $service = new ProjectService();
 
         try {
@@ -196,6 +202,8 @@ class ProjectController extends Controller
      */
     public function duplicate(Request $request, int $id): JsonResponse
     {
+        $this->authorize('create', Project::class);
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'project_number' => 'required|string|max:255|unique:projects',

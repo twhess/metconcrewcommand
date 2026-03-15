@@ -169,6 +169,8 @@ class UserController extends Controller
 
     public function availability(string $date): JsonResponse
     {
+        $this->authorize('viewAny', User::class);
+
         $availableEmployees = $this->schedulingService->getAvailableEmployees($date);
 
         return response()->json([

@@ -18,6 +18,10 @@ class ReportController extends Controller
 
     public function availableResources(string $date): JsonResponse
     {
+        if (!auth()->user()->hasPermission('reports.view')) {
+            abort(403);
+        }
+
         $data = $this->reportService->getAvailableResources($date);
 
         return response()->json([
@@ -28,6 +32,10 @@ class ReportController extends Controller
 
     public function equipmentLocations(): JsonResponse
     {
+        if (!auth()->user()->hasPermission('reports.view')) {
+            abort(403);
+        }
+
         $data = $this->reportService->getEquipmentLocationReport();
 
         return response()->json([
@@ -38,6 +46,10 @@ class ReportController extends Controller
 
     public function inventoryStatus(): JsonResponse
     {
+        if (!auth()->user()->hasPermission('reports.view')) {
+            abort(403);
+        }
+
         $data = $this->reportService->getInventoryStatusReport();
 
         return response()->json([
@@ -48,6 +60,10 @@ class ReportController extends Controller
 
     public function dailySchedule(string $date): JsonResponse
     {
+        if (!auth()->user()->hasPermission('reports.view')) {
+            abort(403);
+        }
+
         $data = $this->reportService->getDailyScheduleSummary($date);
 
         return response()->json([

@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Quasar Frontend for MetCon Crew Command",
   "scripts": {
-    "dev": "vite --port 9000",
+    "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "type-check": "tsc --noEmit"
@@ -23,7 +23,14 @@
     "sass": "^1.97.1",
     "typescript": "^5.9.3",
     "vite": "^7.3.0",
+    "vite-plugin-pwa": "^1.2.0",
     "vue": "^3.5.26",
-    "vue-router": "^4.6.4"
+    "vue-router": "^4.6.4",
+    "workbox-background-sync": "^7.4.0",
+    "workbox-cacheable-response": "^7.4.0",
+    "workbox-expiration": "^7.4.0",
+    "workbox-precaching": "^7.4.0",
+    "workbox-routing": "^7.4.0",
+    "workbox-strategies": "^7.4.0"
   }
 }

@@ -127,6 +127,14 @@ class Vehicle extends Model
     }
 
     /**
+     * Get all mileage logs for this vehicle
+     */
+    public function mileageLogs(): HasMany
+    {
+        return $this->hasMany(MileageLog::class)->orderBy('trip_date', 'desc');
+    }
+
+    /**
      * Get all maintenance records for this vehicle
      */
     public function maintenanceRecords()

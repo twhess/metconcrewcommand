@@ -14,6 +14,8 @@ class MaintenanceScheduleController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', MaintenanceSchedule::class);
+
         $query = MaintenanceSchedule::query()
             ->with(['maintainable', 'assignedUser', 'assignedVendor']);
 
@@ -62,6 +64,8 @@ class MaintenanceScheduleController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
+        $this->authorize('create', MaintenanceSchedule::class);
+
         $validated = $request->validate([
             'maintainable_type' => 'required|string|in:App\\Models\\Equipment,App\\Models\\Vehicle',
             'maintainable_id' => 'required|integer',
@@ -124,6 +128,8 @@ class MaintenanceScheduleController extends Controller
             'updatedBy'
         ])->findOrFail($id);
 
+        $this->authorize('view', $schedule);
+
         return response()->json($schedule);
     }
 
@@ -170,6 +176,8 @@ class MaintenanceScheduleController extends Controller
 
         $schedule = MaintenanceSchedule::findOrFail($id);
 
+        $this->authorize('update', $schedule);
+
         $validated['updated_by'] = auth()->id();
 
         $schedule->update($validated);
@@ -187,6 +195,9 @@ class MaintenanceScheduleController extends Controller
     public function destroy(int $id): JsonResponse
     {
         $schedule = MaintenanceSchedule::findOrFail($id);
+
+        $this->authorize('delete', $schedule);
+
         $schedule->delete();
 
         return response()->json([
@@ -201,6 +212,8 @@ class MaintenanceScheduleController extends Controller
     public function activate(int $id): JsonResponse
     {
         $schedule = MaintenanceSchedule::findOrFail($id);
+
+        $this->authorize('update', $schedule);
 
         $schedule->update([
             'is_active' => true,
@@ -221,6 +234,8 @@ class MaintenanceScheduleController extends Controller
     {
         $schedule = MaintenanceSchedule::findOrFail($id);
 
+        $this->authorize('update', $schedule);
+
         $schedule->update([
             'is_active' => false,
             'updated_by' => auth()->id(),
@@ -238,6 +253,8 @@ class MaintenanceScheduleController extends Controller
      */
     public function active(): JsonResponse
     {
+        $this->authorize('viewAny', MaintenanceSchedule::class);
+
         $schedules = MaintenanceSchedule::where('is_active', true)
             ->with(['maintainable', 'assignedUser', 'assignedVendor'])
             ->orderBy('next_due_date')
@@ -254,6 +271,8 @@ class MaintenanceScheduleController extends Controller
      */
     public function overdue(): JsonResponse
     {
+        $this->authorize('viewAny', MaintenanceSchedule::class);
+
         $schedules = MaintenanceSchedule::where('is_active', true)
             ->where('is_overdue', true)
             ->with(['maintainable', 'assignedUser', 'assignedVendor'])
@@ -272,6 +291,8 @@ class MaintenanceScheduleController extends Controller
      */
     public function forItem(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', MaintenanceSchedule::class);
+
         $validated = $request->validate([
             'maintainable_type' => 'required|string|in:App\\Models\\Equipment,App\\Models\\Vehicle',
             'maintainable_id' => 'required|integer',

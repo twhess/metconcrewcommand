@@ -1,28 +1,12 @@
 {
   "permissions": {
     "allow": [
-      "Bash(mkdir:*)",
-      "Bash(composer create-project:*)",
-      "Bash(composer require:*)",
-      "Bash(php artisan vendor:publish:*)",
-      "Bash(cat:*)",
-      "Bash(npm create:*)",
-      "Bash(npm init:*)",
-      "Bash(npm install:*)",
-      "Bash(npm run dev:*)",
-      "Bash(lsof:*)",
-      "Bash(curl:*)",
-      "Bash(docker compose:*)",
-      "Bash(php artisan serve:*)",
-      "Bash(php artisan:*)",
-      "Bash(tree:*)",
-      "Bash(npx tsc:*)",
-      "Bash(npm run build:*)",
-      "Bash(xargs kill:*)",
-      "Bash(ls:*)",
-      "Bash(npx vue-tsc:*)",
-      "Bash(grep:*)",
-      "Bash(/Users/travishess1/DockerProjects/metconCrewCommand/frontend/src/pages/RolesPage.vue:*)"
+      "Bash(*)",
+      "Grep(*)",
+      "Glob(*)",
+      "Read(*)",
+      "Edit(*)",
+      "Write(*)"
     ]
   }
 }

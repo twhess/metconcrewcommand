@@ -53,6 +53,26 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/pages/EquipmentMovementPage.vue'),
         meta: { requiresAuth: true, permission: 'equipment.move' }
       },
+      // Transport Dispatch
+      {
+        path: '/dispatch',
+        name: 'DispatchDashboard',
+        component: () => import('@/pages/DispatchDashboardPage.vue'),
+        meta: { requiresAuth: true, permission: 'transport.view' }
+      },
+      {
+        path: '/my-assignments',
+        name: 'DriverAssignments',
+        component: () => import('@/pages/DriverAssignmentsPage.vue'),
+        meta: { requiresAuth: true, permission: 'transport.execute' }
+      },
+      // Vehicles
+      {
+        path: '/vehicles',
+        name: 'Vehicles',
+        component: () => import('@/pages/VehiclesPage.vue'),
+        meta: { requiresAuth: true, permission: 'vehicles.view' }
+      },
       // Inventory
       {
         path: '/inventory',

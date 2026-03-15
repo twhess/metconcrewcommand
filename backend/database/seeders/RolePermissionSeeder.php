@@ -41,5 +41,24 @@ class RolePermissionSeeder extends Seeder
         $supervisorPermissions = Permission::whereIn('module', ['schedules', 'equipment', 'inventory', 'reports'])
             ->get();
         $supervisor->permissions()->attach($supervisorPermissions);
+
+        // Dispatch/Scheduling - transport permissions
+        $dispatch = Role::where('slug', 'dispatch_scheduling')->first();
+        if ($dispatch) {
+            $dispatchTransport = Permission::where('module', 'transport')
+                ->whereIn('name', ['transport.view', 'transport.create', 'transport.assign', 'transport.cancel'])
+                ->get();
+            $dispatch->permissions()->attach($dispatchTransport);
+        }
+
+        // Foreman - transport execute
+        $foremanTransport = Permission::whereIn('name', ['transport.view', 'transport.execute'])->get();
+        $foreman->permissions()->attach($foremanTransport);
+
+        // Supervisor - transport view
+        $supervisorTransport = Permission::where('name', 'transport.view')->get();
+        $supervisor->permissions()->attach($supervisorTransport);
+
+        // Laborer - transport view (already has all .view via wildcard above)
     }
 }

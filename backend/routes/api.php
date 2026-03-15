@@ -24,10 +24,12 @@ use App\Http\Controllers\Api\ProjectSpecificationController;
 use App\Http\Controllers\Api\ProjectPhaseController;
 use App\Http\Controllers\Api\ProjectContactController;
 use App\Http\Controllers\Api\ProjectVendorController;
+use App\Http\Controllers\Api\MileageLogController;
+use App\Http\Controllers\Api\TransportOrderController;
 use App\Http\Controllers\Api\EmailTestController;
 
 // Public routes
-Route::post('/auth/login', [AuthController::class, 'login']);
+Route::post('/auth/login', [AuthController::class, 'login'])->middleware('throttle:5,1');
 Route::get('/health', function () {
     return response()->json(['status' => 'ok']);
 });
@@ -90,6 +92,13 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('vehicles/{id}/assign-operator', [VehicleController::class, 'assignOperator']);
     Route::post('vehicles/{id}/generate-qr', [VehicleController::class, 'generateQrCode']);
 
+    // Vehicle Mileage Logs
+    Route::get('vehicles/{id}/mileage', [MileageLogController::class, 'index']);
+    Route::post('vehicles/{id}/mileage', [MileageLogController::class, 'store']);
+    Route::put('mileage-logs/{id}', [MileageLogController::class, 'update']);
+    Route::delete('mileage-logs/{id}', [MileageLogController::class, 'destroy']);
+    Route::get('mileage-logs/report', [MileageLogController::class, 'report']);
+
     // Yards
     Route::apiResource('yards', YardController::class);
 
@@ -99,6 +108,16 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('transport/dropoff', [TransportController::class, 'dropoff']);
     Route::get('transport/in-transit', [TransportController::class, 'itemsInTransit']);
     Route::get('transport/my-transports', [TransportController::class, 'myActiveTransports']);
+
+    // Transport Orders (Dispatch System)
+    Route::get('transport-orders/dispatch-summary', [TransportOrderController::class, 'dispatchSummary']);
+    Route::get('transport-orders/my-assignments', [TransportOrderController::class, 'myAssignments']);
+    Route::post('transport-orders/adhoc-pickup', [TransportOrderController::class, 'adhocPickup']);
+    Route::apiResource('transport-orders', TransportOrderController::class)->except(['destroy']);
+    Route::post('transport-orders/{id}/assign', [TransportOrderController::class, 'assign']);
+    Route::post('transport-orders/{id}/pickup', [TransportOrderController::class, 'pickup']);
+    Route::post('transport-orders/{id}/dropoff', [TransportOrderController::class, 'dropoff']);
+    Route::post('transport-orders/{id}/cancel', [TransportOrderController::class, 'cancel']);
 
     // Inventory
     Route::apiResource('inventory', InventoryController::class);
